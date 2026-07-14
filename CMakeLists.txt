@@ -9,8 +9,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(glm REQUIRED)
+
 add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
+    "src/platform/window.cpp"
+
+    "src/external/tinyfiledialogs.c"
+    "src/external/gl.c"
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}
@@ -19,7 +27,25 @@ target_include_directories(${CMAKE_PROJECT_NAME}
         "./external"
 )
 
+if(WIN32)
+    target_link_libraries(${CMAKE_PROJECT_NAME}
+        comdlg32
+        ole32
+        user32
+        shell32
+    )
+
+    target_link_options(${CMAKE_PROJECT_NAME}
+        PRIVATE
+            -static
+            -static-libgcc
+            -static-libstdc++
+    )
+endif()
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE
+        OpenGL::GL
         glfw
+        glm::glm
 )
