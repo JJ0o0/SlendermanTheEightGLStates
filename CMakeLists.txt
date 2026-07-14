@@ -15,10 +15,18 @@ find_package(glm REQUIRED)
 
 add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
+    "src/application.cpp"
+    
     "src/platform/window.cpp"
+    "src/platform/error_handling.cpp"
+
+    "src/graphics/shader.cpp"
+    "src/graphics/mesh.cpp"
+    "src/graphics/texture.cpp"
 
     "src/external/tinyfiledialogs.c"
     "src/external/gl.c"
+    "src/external/stb_image.cpp"
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}

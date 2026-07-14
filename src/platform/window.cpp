@@ -1,25 +1,21 @@
 #include <platform/window.hpp>
-#include <tinyfiledialogs/tinyfiledialogs.h>
+#include <platform/error_handling.hpp>
+#include <stb/stb_image.h>
 #include <iostream>
 #include <format>
 
 void Window::errorCallback(int code, const char* message) {
     std::string formattedMessage = std::format("{}: {}", code, message);
 
-    tinyfd_messageBox(
-        "GLFW Error",
-        formattedMessage.c_str(),
-        "ok",
-        "error",
-        1
-    );
+    ErrorHandling::ShowError("GLFW Error", formattedMessage);
 }
 
-Window::Window(const WindowProperties& properties)
-    : m_properties(properties) {
+bool Window::Initialize(const WindowProperties& properties) {
+    m_properties = properties;
+
     glfwSetErrorCallback(errorCallback);
 
-    if (!glfwInit()) return;
+    if (!glfwInit()) return false;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -34,37 +30,30 @@ Window::Window(const WindowProperties& properties)
 
     if (!m_handle) { 
         glfwTerminate(); 
-        return; 
+        return false; 
     }
 
     glfwMakeContextCurrent(m_handle);
 
     if (!gladLoadGL(glfwGetProcAddress)) {
-        ShowError("Could not initialize OpenGL");
+        ErrorHandling::ShowError("OpenGL Error", "Could not initialize OpenGL");
         glfwDestroyWindow(m_handle);
         glfwTerminate();
-        return;
+        return false;
     }
 
     glViewport(0, 0, m_properties.Width, m_properties.Height);
     glfwSwapInterval(m_properties.VSync);
 
+    stbi_set_flip_vertically_on_load(true);
+
     std::cout << "Created Window with " << m_properties.Width << "x" << m_properties.Height << "\n";
+    return true;
 }
 
-Window::~Window() {
+void Window::Destroy() {
     std::cout << "Destroying Window...\n";
 
     if (m_handle) glfwDestroyWindow(m_handle); m_handle = nullptr;
     glfwTerminate();
-}
-
-void Window::ShowError(const std::string& message) {
-    tinyfd_messageBox(
-        "Error",
-        message.c_str(),
-        "ok",
-        "error",
-        1
-    );
 }

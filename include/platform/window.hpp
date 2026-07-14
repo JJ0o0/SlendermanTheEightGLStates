@@ -14,15 +14,13 @@ struct WindowProperties {
 
 class Window {
     public:
-        Window(const WindowProperties& properties = {});
-        ~Window();
+        bool Initialize(const WindowProperties& properties = {});
+        void Destroy();
 
         void PollEvents() const { glfwPollEvents(); }
         void SwapBuffers() const { glfwSwapBuffers(m_handle); }
         void Close() const { glfwSetWindowShouldClose(m_handle, true); }
         bool ShouldClose() const { return glfwWindowShouldClose(m_handle); }
-
-        void ShowError(const std::string& message);
 
         const WindowProperties& GetProperties() const { return m_properties; }
     private:
