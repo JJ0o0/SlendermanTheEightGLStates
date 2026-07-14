@@ -4,6 +4,36 @@
 #include <graphics/vertex.hpp>
 #include <vector>
 
+inline void CalculateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+    for (auto& vertex : vertices) vertex.Tangent = glm::vec3(0.0f);
+
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        Vertex& v0 = vertices[indices[i]];
+        Vertex& v1 = vertices[indices[i + 1]];
+        Vertex& v2 = vertices[indices[i + 2]];
+
+        glm::vec3 edge1 = v1.Position - v0.Position;
+        glm::vec3 edge2 = v2.Position - v0.Position;
+
+        glm::vec2 deltaUV1 = v1.TexCoord - v0.TexCoord;
+        glm::vec2 deltaUV2 = v2.TexCoord - v0.TexCoord;
+
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        glm::vec3 tangent;
+        tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+
+        tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+        v0.Tangent += tangent;
+        v1.Tangent += tangent;
+        v2.Tangent += tangent;
+    }
+
+    for (auto& vertex : vertices) vertex.Tangent = glm::normalize(vertex.Tangent);
+}
+
 inline Mesh CreateCube() {
 	std::vector<Vertex> vertices {
 		// Front - Z+
@@ -63,5 +93,6 @@ inline Mesh CreateCube() {
 		21, 23, 22
 	};
 
+	CalculateTangents(vertices, indices);
 	return Mesh(vertices, indices);
 }

@@ -21,6 +21,8 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/shader.cpp"
     "src/graphics/mesh.cpp"
     "src/graphics/texture.cpp"
+    "src/graphics/materials/basic_material.cpp"
+    "src/graphics/materials/pbr_material.cpp"
 
     "src/platform/window.cpp"
     "src/platform/error_handling.cpp"

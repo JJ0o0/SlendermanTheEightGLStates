@@ -74,6 +74,8 @@ bool Window::Initialize(const WindowProperties& properties) {
     glViewport(0, 0, m_properties.Width, m_properties.Height);
     glfwSwapInterval(m_properties.VSync);
 
+    glEnable(GL_DEPTH_TEST);
+
     stbi_set_flip_vertically_on_load(true);
 
     std::cout << "Created Window with " << m_properties.Width << "x" << m_properties.Height << "\n";

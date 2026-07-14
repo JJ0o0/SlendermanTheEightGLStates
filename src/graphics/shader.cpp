@@ -85,7 +85,7 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& value) {
 
 int Shader::getUniformLocation(const std::string& name) {
     int success = glGetUniformLocation(m_id, name.c_str());
-    // if (success == -1) std::cerr << "Could not find \"" << name << "\" uniform.\n";
+    if (success == -1) std::cerr << "Could not find \"" << name << "\" uniform.\n";
 
     return success;
 }
