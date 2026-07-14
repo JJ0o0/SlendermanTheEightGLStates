@@ -2,8 +2,9 @@
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
-#include <string>
+#include <functional>
 #include <cstdint>
+#include <string>
 
 struct WindowProperties {
     std::string Title = "Slenderman: The Eight GL States";
@@ -19,8 +20,16 @@ class Window {
 
         void PollEvents() const { glfwPollEvents(); }
         void SwapBuffers() const { glfwSwapBuffers(m_handle); }
+
         void Close() const { glfwSetWindowShouldClose(m_handle, true); }
         bool ShouldClose() const { return glfwWindowShouldClose(m_handle); }
+
+        void ToggleLockMouse() { glfwSetInputMode(m_handle, GLFW_CURSOR, IsMouseLocked() ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED); }
+        bool IsMouseLocked() const { return glfwGetInputMode(m_handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED; }
+
+        std::function<void(int, int)> OnSizeChanged;
+        std::function<void(double, double)> OnMouseMove;
+        std::function<void(int)> OnKeyPress;
 
         const WindowProperties& GetProperties() const { return m_properties; }
     private:
@@ -29,4 +38,7 @@ class Window {
         WindowProperties m_properties;
 
         static void errorCallback(int code, const char* message);
+        static void framebufferSizeCallback(GLFWwindow* glfwWindow, int width, int height);
+        static void mouseMoveCallback(GLFWwindow* glfwWindow, double xpos, double ypos);
+        static void keyPressCallback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mods);
 };

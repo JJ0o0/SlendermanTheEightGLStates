@@ -5,9 +5,34 @@
 #include <format>
 
 void Window::errorCallback(int code, const char* message) {
-    std::string formattedMessage = std::format("{}: {}", code, message);
+    ErrorHandling::ShowError("GLFW Error", "Code {}: {}", code, message);
+}
 
-    ErrorHandling::ShowError("GLFW Error", formattedMessage);
+void Window::framebufferSizeCallback(GLFWwindow* glfwWindow, int width, int height) {
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+
+    glViewport(0, 0, width, height);
+
+    if (window->OnSizeChanged) window->OnSizeChanged(width, height);
+
+    window->m_properties.Width = static_cast<uint32_t>(width);
+    window->m_properties.Height = static_cast<uint32_t>(height);
+}
+
+void Window::mouseMoveCallback(GLFWwindow* glfwWindow, double xpos, double ypos) {
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+
+    if (window->OnMouseMove) window->OnMouseMove(xpos, ypos);
+}
+
+void Window::keyPressCallback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mods) {
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+
+    switch (action) {
+        case GLFW_PRESS: 
+            if (window->OnKeyPress) window->OnKeyPress(key);
+            break;
+    }
 }
 
 bool Window::Initialize(const WindowProperties& properties) {
@@ -33,6 +58,10 @@ bool Window::Initialize(const WindowProperties& properties) {
         return false; 
     }
 
+    glfwSetWindowUserPointer(m_handle, this);
+    glfwSetFramebufferSizeCallback(m_handle, framebufferSizeCallback);
+    glfwSetCursorPosCallback(m_handle, mouseMoveCallback);
+    glfwSetKeyCallback(m_handle, keyPressCallback);
     glfwMakeContextCurrent(m_handle);
 
     if (!gladLoadGL(glfwGetProcAddress)) {
