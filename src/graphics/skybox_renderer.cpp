@@ -1,6 +1,6 @@
 #include <graphics/skybox_renderer.hpp>
 
-void SkyboxRenderer::Render(const Player& player) {
+void SkyboxRenderer::Render(Player& player) {
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
     glCullFace(GL_FRONT);

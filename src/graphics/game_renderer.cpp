@@ -6,10 +6,10 @@ GameRenderer::GameRenderer(Shader& shader)
     : m_shader(shader) {
 }
 
-void GameRenderer::Render(const World& world, const Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
+void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
     m_shader.Bind();
         setCameraUniforms(player);
-        setLightUniforms(player.GetCamera(), flashlight);
+        setLightUniforms(flashlight);
 
         m_shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
         
@@ -43,13 +43,13 @@ void GameRenderer::drawScene(const World& world, Shader& shader) {
     }
 }
 
-void GameRenderer::setCameraUniforms(const Player& player) {
+void GameRenderer::setCameraUniforms(Player& player) {
     m_shader.SetMat4("uView", player.GetCamera().GetViewMatrix(player.GetEyePosition()));
     m_shader.SetMat4("uProjection", player.GetCamera().GetProjectionMatrix());
     m_shader.SetVec3("uCameraPosition", player.GetEyePosition());
 }
 
-void GameRenderer::setLightUniforms(const Camera& camera, Flashlight& flashlight) {
+void GameRenderer::setLightUniforms(Flashlight& flashlight) {
     // Flashlight
     const auto& properties = flashlight.GetProperties();
     m_shader.SetBool("uLight.Enabled", properties.Enabled);

@@ -8,7 +8,7 @@
 
 struct PlayerProperties {
     float WalkSpeed = 3.0f;
-    float SprintSpeed = 6.0f;
+    float SprintSpeed = 5.0f;
     float Gravity = 20.0f;
 
     float Height = 1.8f;

@@ -19,13 +19,15 @@ void Player::Update(float deltatime, const World& world) {
     }
 
     m_position.y += movement.y;
-    if( world.CheckCollision(GetCollision())) {
+    if (world.CheckCollision(GetCollision())) {
         m_position.y -= movement.y;
         m_velocity.y = 0.0f;
     }
 
     updateCamera();
     updateFlashlight();
+
+    m_camera.UpdateBob(deltatime, glm::length(glm::vec3(m_velocity.x, 0, m_velocity.z)));
 }
 
 void Player::ProcessInput(GLFWwindow* glfwWindow) {

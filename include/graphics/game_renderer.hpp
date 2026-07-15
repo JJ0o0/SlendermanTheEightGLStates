@@ -11,13 +11,13 @@ class GameRenderer {
     public:
         GameRenderer(Shader& shader);
 
-        void Render(const World& world, const Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
+        void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(const World& world, Shader& shader);
     private:
         Shader& m_shader;
         
         void draw(const World& world);
         void drawScene(const World& world, Shader& shader);
-        void setCameraUniforms(const Player& camera);
-        void setLightUniforms(const Camera& camera, Flashlight& flashlight);
+        void setCameraUniforms(Player& player);
+        void setLightUniforms(Flashlight& flashlight);
 };

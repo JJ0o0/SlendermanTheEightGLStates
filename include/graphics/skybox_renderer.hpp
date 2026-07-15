@@ -13,7 +13,7 @@ class SkyboxRenderer {
               m_mesh(CreateSkyboxCube()),
               m_cubemap(cubemap) {}
         
-        void Render(const Player& player);
+        void Render(Player& player);
     private:
         Cubemap& m_cubemap;
         Shader m_shader;
