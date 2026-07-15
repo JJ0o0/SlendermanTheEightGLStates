@@ -21,9 +21,9 @@ glm::mat4 ShadowRenderer::calculateLightSpace(const Flashlight& flashlight) cons
     );
 
     glm::mat4 projection = glm::perspective(
-        glm::radians(properties.OuterCutoff * 2.0f), 
+        glm::radians(properties.OuterCutoff * 2.0f + 5.0f), 
         1.0f, 
-        0.1f, 
+        0.05f, 
         50.0f
     );
 

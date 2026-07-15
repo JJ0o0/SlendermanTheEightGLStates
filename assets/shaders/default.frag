@@ -133,11 +133,12 @@ float calculateAttenuation(float dist) {
     );
 }
 
-float calculateShadow() {
+float calculateShadow(vec3 normal, vec3 lightDirection) {
     vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    if( projCoords.z > 1.0 ||
+    if (projCoords.z > 1.0 ||
+        projCoords.z < 0.0 ||
         projCoords.x < 0.0 ||
         projCoords.x > 1.0 ||
         projCoords.y < 0.0 ||
@@ -146,20 +147,20 @@ float calculateShadow() {
     }
 
     float currDepth = projCoords.z;
-    float bias = 0.0005;
+    float bias = max(0.0005 * (1.0 - dot(normal, lightDirection)), 0.00005);
 
     vec2 texelSize = 1.0 / vec2(textureSize(uShadowMap, 0));
 
     float shadowSum = 0.0;
-    for (int y = -1; y <= 1; y++) {
-        for (int x = -1; x <= 1; x++) {
+    for (int y = -2; y <= 2; y++) {
+        for (int x = -2; x <= 2; x++) {
             vec2 offset = vec2(x, y) * texelSize;
             float neighbor = texture(uShadowMap, projCoords.xy + offset).r;
             shadowSum += (currDepth - bias > neighbor) ? 1.0 : 0.0;
         }
     }
 
-    float shadow = shadowSum / 9.0;
+    float shadow = shadowSum / 25.0;
 
     return shadow;
 }
@@ -197,7 +198,7 @@ vec3 calculateDirectLight(MaterialData data, vec3 normal) {
 
     vec3 radiance = uLight.Radiance * attenuation * spot * cookie;
 
-    float shadow = calculateShadow();
+    float shadow = calculateShadow(normal, lightDirection);
 
     vec3 result = (diffuse + specular) * radiance * ndotl * (1.0 - shadow);
 
