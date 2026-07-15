@@ -1,4 +1,5 @@
 #include <game.hpp>
+#include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
@@ -32,17 +33,27 @@ void Game::Initialize() {
         "assets/shaders/default.frag"
     );
 
-    m_mesh = std::make_unique<Mesh>(CreateSphere());
+    m_mesh = std::make_unique<Mesh>(CreateCube());
 
-    m_normalMap = std::make_shared<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/test_normalmap.jpg"
+    m_albedo = std::make_shared<Texture>(TextureProperties{
+        .SRGB = true,
+        .ImagePath = "assets/textures/wood_albedo.jpg",
+    });
+
+    m_normal = std::make_shared<Texture>(TextureProperties{
+        .ImagePath = "assets/textures/wood_normal.jpg",
+    });
+
+    m_arm = std::make_shared<Texture>(TextureProperties{
+        .ImagePath = "assets/textures/wood_arm.jpg",
     });
 
     m_material = std::make_unique<PBRMaterial>(*m_defaultShader);
-    m_material->SetAlbedo({0.95f, 0.71f, 0.2f});
-    m_material->SetNormalMap(*m_normalMap);
-    m_material->SetMetallic(1.0f);
-    m_material->SetRoughness(0.15f);
+    m_material->SetTextures(PBRTextureSet{
+        m_albedo.get(),
+        m_normal.get(),
+        m_arm.get()
+    });
 
     auto& windowProps = m_window.GetProperties();
     m_camera.SetAspectRatio(windowProps.Width, windowProps.Height);
@@ -55,7 +66,8 @@ void Game::Update(float deltatime) {
 void Game::Render() {
     m_defaultShader->Bind();
         glm::mat4 model{1.0f};
-        model = glm::rotate(model, glm::radians(45.0f), {1.0f, 1.0f, 0.0f});
+        model = glm::translate(model, {0.0f, -1.0f, 0.0f});
+        model = glm::scale(model, {10.0f, 0.1f, 10.0f});
 
         float radius = 3.0f;
         
@@ -65,13 +77,15 @@ void Game::Render() {
             std::sin(m_lightTime) * radius - 1.0f
         };
 
-        glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
+        glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
         m_defaultShader->SetMat4("uModel", model);
         m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix(cameraPosition));
         m_defaultShader->SetMat4("uProjection", m_camera.GetProjectionMatrix());
         m_defaultShader->SetVec3("uCameraPosition", cameraPosition);
-        m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(500.0f));
+        m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(100.0f));
         m_defaultShader->SetVec3("uLight.Position", lightPosition);
+        m_defaultShader->SetVec3("uAmbientColor", {0.08f, 0.09f, 0.12f});
+        m_defaultShader->SetFloat("uAmbientIntensity", 0.03f);
 
         m_material->Bind();
             m_mesh->Draw();

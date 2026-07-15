@@ -57,10 +57,22 @@ void Texture::ChangeImage(const std::string& filepath) {
     GLenum internalFormat = GL_RGB8;
 
     switch (numChannels) {
-        case 1: internalFormat = GL_R8; format = GL_RED;  break;
-        case 2: internalFormat = GL_RG8; format = GL_RG;   break;
-        case 3: internalFormat = GL_RGB8; format = GL_RGB;  break;
-        case 4: internalFormat = GL_RGBA8; format = GL_RGBA; break;
+        case 1: 
+            internalFormat = GL_R8; 
+            format = GL_RED;  
+            break;
+        case 2: 
+            internalFormat = GL_RG8; 
+            format = GL_RG;   
+            break;
+        case 3: 
+            internalFormat = m_properties.SRGB ? GL_SRGB8 : GL_RGB8; 
+            format = GL_RGB;  
+            break;
+        case 4: 
+            internalFormat = m_properties.SRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8; 
+            format = GL_RGBA; 
+            break;
     }
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

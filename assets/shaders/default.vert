@@ -17,7 +17,10 @@ void main() {
     WorldPos = worldPos.xyz;
     
     vec3 T = normalize(mat3(uModel) * aTangent);
-    vec3 N = normalize(mat3(uModel) * aNormal);
+
+    mat3 normalMatrix = transpose(inverse(mat3(uModel)));
+    vec3 N = normalize(normalMatrix * aNormal);
+
     T = normalize(T - dot(T, N) * N);
 
     vec3 B = cross(N, T);

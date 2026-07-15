@@ -25,6 +25,7 @@ struct TextureProperties {
     int Height = 0;
     int Channels = 0;
     bool Mipmaps = true;
+    bool SRGB = false;
     std::string ImagePath = "assets/textures/default.jpg";
     TextureWrapOption Wrap = TextureWrapOption::Repeat;
     TextureFilterOption MinFilter = TextureFilterOption::LinearMipmapLinear;
