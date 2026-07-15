@@ -10,7 +10,7 @@ void Game::Initialize() {
     m_window.ToggleLockMouse();
 
     m_window.OnMouseMove = [&](double xpos, double ypos) {
-        if (m_window.IsMouseLocked()) m_camera.HandleMouseMovement(xpos, ypos);
+        if (m_window.IsMouseLocked()) m_player.GetCamera().HandleMouseMovement(xpos, ypos);
     };
 
     m_window.OnKeyPress = [&](int key) {
@@ -18,15 +18,39 @@ void Game::Initialize() {
             case GLFW_KEY_ESCAPE:
                 m_window.ToggleLockMouse();
 
-                if (!m_window.IsMouseLocked()) m_camera.ResetMouseMovement();
+                if (!m_window.IsMouseLocked()) m_player.GetCamera().ResetMouseMovement();
                 break;
         }
     };
 
     m_window.OnSizeChanged = [&](int width, int height) {
-        m_camera.SetAspectRatio(width, height);
+        m_player.GetCamera().SetAspectRatio(width, height);
     };
 
+    loadResources();
+    
+    auto& windowProps = m_window.GetProperties();
+    m_player.GetCamera().SetAspectRatio(windowProps.Width, windowProps.Height);
+
+    std::cout << "Game initialized!\n";
+}
+
+void Game::Update(float deltatime) {
+    m_player.ProcessInput(m_window.GetHandle());
+    m_player.Update(deltatime, m_world);
+}
+
+void Game::Render() {
+    m_shadowRenderer->Render(m_world, *m_renderer, m_player.GetFlashlight());
+
+    glViewport(0,0,m_window.GetProperties().Width, m_window.GetProperties().Height);
+
+    m_skyboxRenderer->Render(m_player);
+    m_renderer->Render(m_world, m_player, m_player.GetFlashlight(), m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap());
+}
+
+void Game::loadResources() {
+    // SHADERS
     m_defaultShader = std::make_unique<Shader>(
         "assets/shaders/default.vert",
         "assets/shaders/default.frag"
@@ -36,7 +60,40 @@ void Game::Initialize() {
         "assets/shaders/shadow_depth.vert",
         "assets/shaders/shadow_depth.frag"
     );
-    
+
+    // ENTITIES
+    auto& floor = m_world.CreateEntity("Floor");
+    floor.SetMesh(std::make_shared<Mesh>(CreateCube()));
+
+    auto albedo = std::make_shared<Texture>(TextureProperties{
+        .SRGB = true,
+        .ImagePath = "assets/textures/wood_albedo.jpg",
+    });
+
+    auto normal = std::make_shared<Texture>(TextureProperties{
+        .ImagePath = "assets/textures/wood_normal.jpg",
+    });
+
+    auto arm = std::make_shared<Texture>(TextureProperties{
+        .ImagePath = "assets/textures/wood_arm.jpg",
+    });
+
+    auto material = std::make_shared<PBRMaterial>(*m_defaultShader);
+    material->SetTextures(PBRTextureSet{
+        albedo,
+        normal,
+        arm
+    });
+
+    floor.SetMaterial(material);
+
+    auto& floorTransform = floor.GetTransform();
+    floorTransform.Position.y = -1.0f;
+    floorTransform.Scale = {10.0f, 0.1f, 10.0f};
+
+    floor.SetCollider(Collider(floorTransform.Scale));
+
+    // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
         .Faces = {
             "assets/textures/skybox/_px.png",
@@ -48,35 +105,8 @@ void Game::Initialize() {
         }
     });
     
+    // RENDERERS
     m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
     m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
-
-    auto& windowProps = m_window.GetProperties();
-    m_camera.SetAspectRatio(windowProps.Width, windowProps.Height);
-
-    std::cout << "Game initialized!\n";
-}
-
-void Game::Update(float deltatime) {
-
-}
-
-void Game::Render() {
-    glm::vec3 cameraPos = {1.0f, 2.5f, 1.0f};
-
-    glm::vec3 right = m_camera.GetRight();
-    glm::vec3 up = glm::normalize(m_camera.GetUp());
-
-    glm::vec3 lightPos = cameraPos + right * 0.2f - up * -0.1f;
-
-    m_flashlight.SetPosition(lightPos);
-    m_flashlight.SetDirection(m_camera.GetFront());
-
-    m_shadowRenderer->Render(*m_renderer, m_flashlight);
-
-    glViewport(0,0,m_window.GetProperties().Width, m_window.GetProperties().Height);
-
-    m_skyboxRenderer->Render(m_camera);
-    m_renderer->Render(m_camera, m_flashlight, m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap());
 }

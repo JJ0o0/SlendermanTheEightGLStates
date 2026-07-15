@@ -1,8 +1,6 @@
 #include <graphics/materials/pbr_material.hpp>
 
 void PBRMaterial::Bind() {
-    m_shader.Bind();
-
     int slot = 0;
     if (m_shader.UniformExists("uAlbedoMap") && m_textures.Albedo != nullptr) { 
         m_textures.Albedo->Bind(slot);

@@ -1,33 +1,23 @@
 #pragma once
 
-#include <playable/camera.hpp>
+#include <world.hpp>
 #include <playable/flashlight.hpp>
+#include <playable/player.hpp>
 #include <graphics/shader.hpp>
 #include <graphics/mesh.hpp>
 #include <graphics/materials/pbr_material.hpp>
-#include <memory>
 
 class GameRenderer {
     public:
         GameRenderer(Shader& shader);
 
-        void Render(const Camera& camera, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
-        void DrawDepth(Shader& shader);
+        void Render(const World& world, const Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
+        void DrawDepth(const World& world, Shader& shader);
     private:
         Shader& m_shader;
         
-        std::unique_ptr<Mesh> m_mesh;
-
-        std::unique_ptr<PBRMaterial> m_material;
-        std::shared_ptr<Texture> m_materialAlbedo;
-        std::shared_ptr<Texture> m_materialNormal;
-        std::shared_ptr<Texture> m_materialARM;
-
-        void draw(const Flashlight& flashlight);
-        void drawScene(Shader& shader);
-        void setCameraUniforms(const Camera& camera);
+        void draw(const World& world);
+        void drawScene(const World& world, Shader& shader);
+        void setCameraUniforms(const Player& camera);
         void setLightUniforms(const Camera& camera, Flashlight& flashlight);
-
-        // TEMPORÁRIO
-        glm::mat4 getModelMatrix();
 };

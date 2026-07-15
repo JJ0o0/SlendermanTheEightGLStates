@@ -16,6 +16,7 @@ find_package(glm REQUIRED)
 add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
     "src/game.cpp"
+    "src/world.cpp"
     "src/application.cpp"
     
     "src/graphics/shader.cpp"
@@ -36,6 +37,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 
     "src/playable/camera.cpp"
     "src/playable/flashlight.cpp"
+    "src/playable/player.cpp"
 
     "src/external/tinyfiledialogs.c"
     "src/external/gl.c"

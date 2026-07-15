@@ -1,8 +1,8 @@
 #pragma once
 
-#include <playable/camera.hpp>
 #include <graphics/cubemap.hpp>
 #include <graphics/shader.hpp>
+#include <playable/player.hpp>
 #include <graphics/skybox_mesh.hpp>
 #include <graphics/shapes/skybox_cube.hpp>
 
@@ -13,7 +13,7 @@ class SkyboxRenderer {
               m_mesh(CreateSkyboxCube()),
               m_cubemap(cubemap) {}
         
-        void Render(Camera& camera);
+        void Render(const Player& player);
     private:
         Cubemap& m_cubemap;
         Shader m_shader;

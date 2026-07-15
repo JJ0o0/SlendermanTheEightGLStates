@@ -31,6 +31,7 @@ class Window {
         std::function<void(double, double)> OnMouseMove;
         std::function<void(int)> OnKeyPress;
 
+        GLFWwindow* GetHandle() { return m_handle; }
         const WindowProperties& GetProperties() const { return m_properties; }
     private:
         GLFWwindow* m_handle = nullptr;

@@ -12,7 +12,9 @@
 #include <platform/window.hpp>
 
 #include <playable/flashlight.hpp>
-#include <playable/camera.hpp>
+#include <playable/player.hpp>
+
+#include <world.hpp>
 
 #include <memory>
 
@@ -34,7 +36,10 @@ class Game {
         std::unique_ptr<GameRenderer> m_renderer;
         std::unique_ptr<SkyboxRenderer> m_skyboxRenderer;
         std::unique_ptr<ShadowRenderer> m_shadowRenderer;
+        
+        World m_world{};
 
-        Flashlight m_flashlight{};
-        Camera m_camera{};
+        Player m_player{};
+
+        void loadResources();
 };

@@ -8,7 +8,7 @@ class ShadowRenderer {
         ShadowRenderer(Shader& shader, uint32_t shadowSize) 
             : m_depthShader(shader), m_shadowMap(shadowSize) {}
 
-        void Render(GameRenderer& renderer, const Flashlight& flashlight);
+        void Render(const World& world, GameRenderer& renderer, const Flashlight& flashlight);
 
         uint32_t GetShadowMap() const { return m_shadowMap.GetDepthTexture(); }
         glm::mat4 GetLightSpaceMatrix() const { return m_lightSpaceMatrix; }

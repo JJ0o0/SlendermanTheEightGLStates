@@ -3,11 +3,12 @@
 #include <graphics/shader.hpp>
 #include <graphics/texture.hpp>
 #include <graphics/material.hpp>
+#include <memory>
 
 struct PBRTextureSet {
-    Texture* Albedo = nullptr;
-    Texture* Normal = nullptr;
-    Texture* ARM = nullptr;
+    std::shared_ptr<Texture> Albedo;
+    std::shared_ptr<Texture> Normal;
+    std::shared_ptr<Texture> ARM;
 };
 
 class PBRMaterial : public Material {

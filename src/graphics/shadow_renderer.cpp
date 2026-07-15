@@ -1,12 +1,12 @@
 #include <graphics/shadow_renderer.hpp>
 
-void ShadowRenderer::Render(GameRenderer& renderer, const Flashlight& flashlight) {
+void ShadowRenderer::Render(const World& world, GameRenderer& renderer, const Flashlight& flashlight) {
     m_lightSpaceMatrix = calculateLightSpace(flashlight);
     
     m_shadowMap.Begin();
         m_depthShader.Bind();
             m_depthShader.SetMat4("uLightSpaceMatrix", m_lightSpaceMatrix);
-            renderer.DrawDepth(m_depthShader);
+            renderer.DrawDepth(world, m_depthShader);
         m_depthShader.Unbind();
     m_shadowMap.End();
 }
