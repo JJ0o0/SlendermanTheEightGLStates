@@ -55,6 +55,19 @@ void Game::Initialize() {
         m_arm.get()
     });
 
+    m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
+        .Faces = {
+            "assets/textures/skybox/_px.png",
+            "assets/textures/skybox/_nx.png",
+            "assets/textures/skybox/_ny.png",
+            "assets/textures/skybox/_py.png",
+            "assets/textures/skybox/_pz.png",
+            "assets/textures/skybox/_nz.png"
+        }
+    });
+
+    m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
+
     auto& windowProps = m_window.GetProperties();
     m_camera.SetAspectRatio(windowProps.Width, windowProps.Height);
 }
@@ -64,6 +77,8 @@ void Game::Update(float deltatime) {
 }
 
 void Game::Render() {
+    m_skyboxRenderer->Render(m_camera);
+
     m_defaultShader->Bind();
         glm::mat4 model{1.0f};
         model = glm::translate(model, {0.0f, -1.0f, 0.0f});
@@ -77,11 +92,10 @@ void Game::Render() {
             std::sin(m_lightTime) * radius - 1.0f
         };
 
-        glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
         m_defaultShader->SetMat4("uModel", model);
-        m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix(cameraPosition));
+        m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix({0.0f, 0.0f, 1.0f}));
         m_defaultShader->SetMat4("uProjection", m_camera.GetProjectionMatrix());
-        m_defaultShader->SetVec3("uCameraPosition", cameraPosition);
+        m_defaultShader->SetVec3("uCameraPosition", {0.0f, 0.0f, 1.0f});
         m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(100.0f));
         m_defaultShader->SetVec3("uLight.Position", lightPosition);
         m_defaultShader->SetVec3("uAmbientColor", {0.08f, 0.09f, 0.12f});

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <graphics/skybox_renderer.hpp>
 #include <graphics/materials/pbr_material.hpp>
 #include <graphics/mesh.hpp>
 #include <graphics/shader.hpp>
@@ -23,6 +24,8 @@ class Game {
         std::shared_ptr<Texture> m_albedo;
         std::shared_ptr<Texture> m_normal;
         std::shared_ptr<Texture> m_arm;
+        std::unique_ptr<Cubemap> m_skyboxCubemap;
+        std::unique_ptr<SkyboxRenderer> m_skyboxRenderer;
         Camera m_camera{};
 
         float m_lightTime = 0.0f;

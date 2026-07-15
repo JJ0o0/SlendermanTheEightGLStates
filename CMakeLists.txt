@@ -21,6 +21,9 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/shader.cpp"
     "src/graphics/mesh.cpp"
     "src/graphics/texture.cpp"
+    "src/graphics/cubemap.cpp"
+    "src/graphics/skybox_mesh.cpp"
+    "src/graphics/skybox_renderer.cpp"
     "src/graphics/materials/basic_material.cpp"
     "src/graphics/materials/pbr_material.cpp"
 
