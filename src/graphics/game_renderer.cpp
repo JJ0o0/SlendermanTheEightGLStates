@@ -27,33 +27,48 @@ GameRenderer::GameRenderer(Shader& shader)
     });
 }
 
-void GameRenderer::Render(const Camera& camera, Flashlight& flashlight) {
+void GameRenderer::Render(const Camera& camera, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
     m_shader.Bind();
         setCameraUniforms(camera);
         setLightUniforms(camera, flashlight);
+
+        m_shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
+        
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, shadowMap);
+
+        m_shader.SetInt("uShadowMap", 4);
 
         draw(flashlight);
     m_shader.Unbind();
 }
 
 void GameRenderer::DrawDepth(Shader& shader) {
-    shader.SetMat4("uModel", getModelMatrix());
-
-    m_mesh->Draw();
+    drawScene(shader);
 }
 
 void GameRenderer::draw(const Flashlight& flashlight) {
-    m_shader.SetMat4("uModel", getModelMatrix());
-
     m_material->Bind();
         flashlight.Bind(3);
-            m_mesh->Draw();
+            drawScene(m_shader);
         flashlight.Unbind();
     m_material->Unbind();
 }
 
+void GameRenderer::drawScene(Shader& shader) {
+    shader.SetMat4("uModel", getModelMatrix());
+    m_mesh->Draw();
+
+    auto cube = glm::mat4(1.0f);
+    cube = glm::translate(cube, {0.0f, 1.0f, 2.0f});
+    cube = glm::scale(cube, glm::vec3{0.8f});
+
+    shader.SetMat4("uModel", cube);
+    m_mesh->Draw();
+}
+
 void GameRenderer::setCameraUniforms(const Camera& camera) {
-    glm::vec3 cameraPos = {0.0f, 0.0f, 1.0f};
+    glm::vec3 cameraPos = {1.0f, 2.5f, 1.0f};
 
     m_shader.SetMat4("uView", camera.GetViewMatrix(cameraPos));
     m_shader.SetMat4("uProjection", camera.GetProjectionMatrix());
@@ -61,11 +76,6 @@ void GameRenderer::setCameraUniforms(const Camera& camera) {
 }
 
 void GameRenderer::setLightUniforms(const Camera& camera, Flashlight& flashlight) {
-    glm::vec3 cameraPos = {0.0f, 0.0f, 1.0f};
-
-    flashlight.SetPosition(cameraPos);
-    flashlight.SetDirection(camera.GetFront());
-
     // Flashlight
     const auto& properties = flashlight.GetProperties();
     m_shader.SetBool("uLight.Enabled", properties.Enabled);

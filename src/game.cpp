@@ -31,6 +31,11 @@ void Game::Initialize() {
         "assets/shaders/default.vert",
         "assets/shaders/default.frag"
     );
+
+    m_shadowShader = std::make_unique<Shader>(
+        "assets/shaders/shadow_depth.vert",
+        "assets/shaders/shadow_depth.frag"
+    );
     
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
         .Faces = {
@@ -45,6 +50,7 @@ void Game::Initialize() {
     
     m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
+    m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
 
     auto& windowProps = m_window.GetProperties();
     m_camera.SetAspectRatio(windowProps.Width, windowProps.Height);
@@ -57,6 +63,15 @@ void Game::Update(float deltatime) {
 }
 
 void Game::Render() {
+    glm::vec3 cameraPos = {1.0f, 2.5f, 1.0f};
+
+    m_flashlight.SetPosition(cameraPos);
+    m_flashlight.SetDirection(m_camera.GetFront());
+
+    m_shadowRenderer->Render(*m_renderer, m_flashlight);
+
+    glViewport(0,0,m_window.GetProperties().Width, m_window.GetProperties().Height);
+
     m_skyboxRenderer->Render(m_camera);
-    m_renderer->Render(m_camera, m_flashlight);
+    m_renderer->Render(m_camera, m_flashlight, m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap());
 }

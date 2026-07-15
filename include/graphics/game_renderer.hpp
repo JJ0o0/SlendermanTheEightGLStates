@@ -11,7 +11,7 @@ class GameRenderer {
     public:
         GameRenderer(Shader& shader);
 
-        void Render(const Camera& camera, Flashlight& flashlight);
+        void Render(const Camera& camera, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(Shader& shader);
     private:
         Shader& m_shader;
@@ -24,6 +24,7 @@ class GameRenderer {
         std::shared_ptr<Texture> m_materialARM;
 
         void draw(const Flashlight& flashlight);
+        void drawScene(Shader& shader);
         void setCameraUniforms(const Camera& camera);
         void setLightUniforms(const Camera& camera, Flashlight& flashlight);
 

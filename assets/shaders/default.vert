@@ -8,9 +8,12 @@ out vec3 WorldPos;
 out vec2 TexCoord;
 out mat3 TBN;
 
+out vec4 FragPosLightSpace;
+
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
+uniform mat4 uLightSpaceMatrix;
 
 void main() {
     vec4 worldPos = uModel * vec4(aPos, 1.0);
@@ -28,6 +31,8 @@ void main() {
     TBN = mat3(T, B, N);
 
     TexCoord = aTexCoord;
+
+    FragPosLightSpace = uLightSpaceMatrix * worldPos;
 
     gl_Position = uProjection * uView * worldPos;
 }

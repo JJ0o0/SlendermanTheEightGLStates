@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec3 WorldPos;
 in vec2 TexCoord;
 in mat3 TBN;
+in vec4 FragPosLightSpace;
 
 #define PI 3.14159265
 
@@ -38,6 +39,8 @@ uniform sampler2D uAlbedoMap;
 uniform sampler2D uNormalMap;
 uniform sampler2D uARMMap;
 uniform sampler2D uFlashlightCookie;
+
+uniform sampler2D uShadowMap;
 
 vec3 calculateFresnelSchlick(float cosTheta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(1.0 - cosTheta, 5.0);
@@ -130,6 +133,27 @@ float calculateAttenuation(float dist) {
     );
 }
 
+float calculateShadow() {
+    vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if( projCoords.z > 1.0 ||
+        projCoords.x < 0.0 ||
+        projCoords.x > 1.0 ||
+        projCoords.y < 0.0 ||
+        projCoords.y > 1.0) {
+        return 0.0;
+    }
+
+    float closestDepth = texture(uShadowMap, projCoords.xy).r;
+    float currDepth = projCoords.z;
+
+    float bias = 0.0005;
+    float shadow =  currDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
+
 vec3 calculateDirectLight(MaterialData data, vec3 normal) {
     if (!uLight.Enabled) return vec3(0.0);
 
@@ -163,7 +187,9 @@ vec3 calculateDirectLight(MaterialData data, vec3 normal) {
 
     vec3 radiance = uLight.Radiance * attenuation * spot * cookie;
 
-    vec3 result = (diffuse + specular) * radiance * ndotl;
+    float shadow = calculateShadow();
+
+    vec3 result = (diffuse + specular) * radiance * ndotl * (1.0 - shadow);
 
     return result;
 }
