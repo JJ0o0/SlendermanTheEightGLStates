@@ -18,7 +18,14 @@ struct MaterialData {
 
 struct Light {
     vec3 Radiance;
+
     vec3 Position;
+    vec3 Direction;
+
+    float InnerCutoff;
+    float OuterCutoff;
+
+    bool Enabled;
 };
 
 uniform vec3 uCameraPosition;
@@ -30,6 +37,7 @@ uniform float uAmbientIntensity;
 uniform sampler2D uAlbedoMap;
 uniform sampler2D uNormalMap;
 uniform sampler2D uARMMap;
+uniform sampler2D uFlashlightCookie;
 
 vec3 calculateFresnelSchlick(float cosTheta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(1.0 - cosTheta, 5.0);
@@ -44,7 +52,7 @@ float distributionGGX(vec3 n, vec3 h, float r) {
 
     float num = a2;
     float denom = (ndoth2 * (a2 - 1.0) + 1.0);
-    denom = 3.14159265 * denom * denom;
+    denom = PI * denom * denom;
 
     return num / denom;
 }
@@ -86,7 +94,45 @@ vec3 calculateAmbient(MaterialData data) {
     return uAmbientColor * uAmbientIntensity * data.Albedo * data.AO;
 }
 
+float calculateSpotIntensity(vec3 lightDirection) {
+    float theta = dot(lightDirection, normalize(-uLight.Direction));
+    float epsilon = uLight.InnerCutoff - uLight.OuterCutoff;
+    return clamp((theta - uLight.OuterCutoff) / epsilon, 0.0, 1.0);
+}
+
+float calculateCookie() {
+    vec3 forward = normalize(uLight.Direction);
+
+    vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+    vec3 up = normalize(cross(right, forward));
+
+    vec3 local = WorldPos - uLight.Position;
+
+    float z = dot(local, forward);
+
+    if (z <= 0.0) return 0.0;
+
+    float radius = tan(acos(uLight.OuterCutoff));
+
+    vec2 uv;
+    uv = vec2(dot(local, right), dot(local, up)) / (z * radius);
+    uv = uv * 0.5 + 0.5;
+
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0;
+    return texture(uFlashlightCookie, uv).r;
+}
+
+float calculateAttenuation(float dist) {
+    return 1.0 / (
+        1.0 +
+        0.09 * dist +
+        0.032 * dist * dist
+    );
+}
+
 vec3 calculateDirectLight(MaterialData data, vec3 normal) {
+    if (!uLight.Enabled) return vec3(0.0);
+
     vec3 lightDirection = normalize(uLight.Position - WorldPos);
     vec3 viewDirection = normalize(uCameraPosition - WorldPos);
     vec3 halfWay = normalize(viewDirection + lightDirection);
@@ -111,21 +157,38 @@ vec3 calculateDirectLight(MaterialData data, vec3 normal) {
     vec3 diffuse = kd * data.Albedo / PI;
 
     float dist = length(uLight.Position - WorldPos);
-    float attenuation = 1.0 / (dist * dist);
-    vec3 radiance = uLight.Radiance * attenuation;
+    float attenuation = calculateAttenuation(dist);
+    float spot = calculateSpotIntensity(lightDirection);
+    float cookie = calculateCookie();
+
+    vec3 radiance = uLight.Radiance * attenuation * spot * cookie;
 
     vec3 result = (diffuse + specular) * radiance * ndotl;
-    result *= data.AO;
 
     return result;
 }
 
-vec3 tonemap(vec3 color) {
-    return color / (color + vec3(1.0));
+vec3 tonemap(vec3 x) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0);
 }
 
 vec3 gammaCorrection(vec3 color) {
     return pow(color, vec3(1.0 / 2.2));
+}
+
+vec3 applyFog(vec3 color) {
+    vec3 fogColor = vec3(0.01, 0.015, 0.02);
+    float dist = length(uCameraPosition - WorldPos);
+    float fog = exp(-dist * 0.08);
+
+    fog = clamp(fog, 0.0, 1.0);
+    return mix(fogColor, color, fog);
 }
 
 void main() {
@@ -135,6 +198,7 @@ void main() {
     vec3 direct = calculateDirectLight(material, material.Normal);
 
     vec3 color = ambient + direct;
+    color = applyFog(color);
     color = tonemap(color);
     color = gammaCorrection(color);
     

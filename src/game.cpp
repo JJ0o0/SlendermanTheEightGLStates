@@ -48,6 +48,10 @@ void Game::Initialize() {
         .ImagePath = "assets/textures/wood_arm.jpg",
     });
 
+    m_flashlightCookie = std::make_unique<Texture>(TextureProperties{
+        .ImagePath = "assets/textures/cookie.png"
+    });
+
     m_material = std::make_unique<PBRMaterial>(*m_defaultShader);
     m_material->SetTextures(PBRTextureSet{
         m_albedo.get(),
@@ -73,7 +77,7 @@ void Game::Initialize() {
 }
 
 void Game::Update(float deltatime) {
-    m_lightTime += deltatime;
+
 }
 
 void Game::Render() {
@@ -84,25 +88,27 @@ void Game::Render() {
         model = glm::translate(model, {0.0f, -1.0f, 0.0f});
         model = glm::scale(model, {10.0f, 0.1f, 10.0f});
 
-        float radius = 3.0f;
-        
-        glm::vec3 lightPosition {
-            std::cos(m_lightTime) * radius,
-            1.5f,
-            std::sin(m_lightTime) * radius - 1.0f
-        };
-
+        glm::vec3 cameraPos = {0.0f, 0.0f, 1.0f};
         m_defaultShader->SetMat4("uModel", model);
-        m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix({0.0f, 0.0f, 1.0f}));
+        m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix(cameraPos));
         m_defaultShader->SetMat4("uProjection", m_camera.GetProjectionMatrix());
-        m_defaultShader->SetVec3("uCameraPosition", {0.0f, 0.0f, 1.0f});
-        m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(100.0f));
-        m_defaultShader->SetVec3("uLight.Position", lightPosition);
-        m_defaultShader->SetVec3("uAmbientColor", {0.08f, 0.09f, 0.12f});
+        m_defaultShader->SetVec3("uCameraPosition", cameraPos);
+
+        m_defaultShader->SetBool("uLight.Enabled", true);
+        m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(18.0f, 17.5f, 16.5f));
+        m_defaultShader->SetVec3("uLight.Position", cameraPos);
+        m_defaultShader->SetFloat("uLight.InnerCutoff", std::cos(glm::radians(25.0f)));
+        m_defaultShader->SetFloat("uLight.OuterCutoff", std::cos(glm::radians(35.0f)));
+        m_defaultShader->SetVec3("uLight.Direction", m_camera.GetFront());
+        m_defaultShader->SetInt("uFlashlightCookie", 3);
+
+        m_defaultShader->SetVec3("uAmbientColor", {0.02f, 0.03f, 0.05f});
         m_defaultShader->SetFloat("uAmbientIntensity", 0.03f);
 
         m_material->Bind();
+        m_flashlightCookie->Bind(3);
             m_mesh->Draw();
+        m_flashlightCookie->Unbind();
         m_material->Unbind();
     m_defaultShader->Unbind();
 }
