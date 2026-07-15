@@ -24,6 +24,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/cubemap.cpp"
     "src/graphics/skybox_mesh.cpp"
     "src/graphics/skybox_renderer.cpp"
+    "src/graphics/game_renderer.cpp"
     "src/graphics/materials/basic_material.cpp"
     "src/graphics/materials/pbr_material.cpp"
 
@@ -31,6 +32,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/platform/error_handling.cpp"
 
     "src/playable/camera.cpp"
+    "src/playable/flashlight.cpp"
 
     "src/external/tinyfiledialogs.c"
     "src/external/gl.c"

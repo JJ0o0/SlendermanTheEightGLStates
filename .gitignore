@@ -5,3 +5,5 @@ dist/
 vcpkg/
 
 mingw-w64.cmake
+
+TODO.md

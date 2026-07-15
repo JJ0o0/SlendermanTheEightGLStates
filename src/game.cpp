@@ -3,7 +3,6 @@
 #include <graphics/shapes/sphere.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
-#include <cmath>
 
 void Game::Initialize() {
     std::cout << "Initializing Game...\n";
@@ -32,33 +31,7 @@ void Game::Initialize() {
         "assets/shaders/default.vert",
         "assets/shaders/default.frag"
     );
-
-    m_mesh = std::make_unique<Mesh>(CreateCube());
-
-    m_albedo = std::make_shared<Texture>(TextureProperties{
-        .SRGB = true,
-        .ImagePath = "assets/textures/wood_albedo.jpg",
-    });
-
-    m_normal = std::make_shared<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/wood_normal.jpg",
-    });
-
-    m_arm = std::make_shared<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/wood_arm.jpg",
-    });
-
-    m_flashlightCookie = std::make_unique<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/cookie.png"
-    });
-
-    m_material = std::make_unique<PBRMaterial>(*m_defaultShader);
-    m_material->SetTextures(PBRTextureSet{
-        m_albedo.get(),
-        m_normal.get(),
-        m_arm.get()
-    });
-
+    
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
         .Faces = {
             "assets/textures/skybox/_px.png",
@@ -69,11 +42,14 @@ void Game::Initialize() {
             "assets/textures/skybox/_nz.png"
         }
     });
-
+    
+    m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
 
     auto& windowProps = m_window.GetProperties();
     m_camera.SetAspectRatio(windowProps.Width, windowProps.Height);
+
+    std::cout << "Game initialized!\n";
 }
 
 void Game::Update(float deltatime) {
@@ -82,33 +58,5 @@ void Game::Update(float deltatime) {
 
 void Game::Render() {
     m_skyboxRenderer->Render(m_camera);
-
-    m_defaultShader->Bind();
-        glm::mat4 model{1.0f};
-        model = glm::translate(model, {0.0f, -1.0f, 0.0f});
-        model = glm::scale(model, {10.0f, 0.1f, 10.0f});
-
-        glm::vec3 cameraPos = {0.0f, 0.0f, 1.0f};
-        m_defaultShader->SetMat4("uModel", model);
-        m_defaultShader->SetMat4("uView", m_camera.GetViewMatrix(cameraPos));
-        m_defaultShader->SetMat4("uProjection", m_camera.GetProjectionMatrix());
-        m_defaultShader->SetVec3("uCameraPosition", cameraPos);
-
-        m_defaultShader->SetBool("uLight.Enabled", true);
-        m_defaultShader->SetVec3("uLight.Radiance", glm::vec3(18.0f, 17.5f, 16.5f));
-        m_defaultShader->SetVec3("uLight.Position", cameraPos);
-        m_defaultShader->SetFloat("uLight.InnerCutoff", std::cos(glm::radians(25.0f)));
-        m_defaultShader->SetFloat("uLight.OuterCutoff", std::cos(glm::radians(35.0f)));
-        m_defaultShader->SetVec3("uLight.Direction", m_camera.GetFront());
-        m_defaultShader->SetInt("uFlashlightCookie", 3);
-
-        m_defaultShader->SetVec3("uAmbientColor", {0.02f, 0.03f, 0.05f});
-        m_defaultShader->SetFloat("uAmbientIntensity", 0.03f);
-
-        m_material->Bind();
-        m_flashlightCookie->Bind(3);
-            m_mesh->Draw();
-        m_flashlightCookie->Unbind();
-        m_material->Unbind();
-    m_defaultShader->Unbind();
+    m_renderer->Render(m_camera, m_flashlight);
 }
