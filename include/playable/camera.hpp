@@ -23,6 +23,7 @@ class Camera {
         void SetAspectRatio(int width, int height);
 
         glm::vec3 GetFront() const { return m_front; }
+        glm::vec3 GetUp() const { return glm::cross(GetRight(), m_front); }
         glm::vec3 GetRight() const;
         glm::mat4 GetViewMatrix(const glm::vec3& position) const;
         glm::mat4 GetProjectionMatrix() const;

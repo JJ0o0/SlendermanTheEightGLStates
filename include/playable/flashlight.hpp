@@ -19,7 +19,7 @@ class Flashlight {
         Flashlight(const FlashlightProperties& properties = {})
             : m_cookie(TextureProperties{
                 .ImagePath = "assets/textures/cookie.png"
-            }) {}
+            }), m_properties(properties) {}
         
         void Bind(int unit = 3) const;
         void Unbind() const;

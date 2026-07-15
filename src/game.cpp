@@ -65,7 +65,14 @@ void Game::Update(float deltatime) {
 void Game::Render() {
     glm::vec3 cameraPos = {1.0f, 2.5f, 1.0f};
 
-    m_flashlight.SetPosition(cameraPos);
+    glm::vec3 right = m_camera.GetRight();
+    glm::vec3 up = glm::normalize(glm::cross(right, m_camera.GetFront()));
+
+    glm::vec3 lightPos = cameraPos
+                        + right * 0.2f
+                        - up * 0.2f;
+
+    m_flashlight.SetPosition(lightPos);
     m_flashlight.SetDirection(m_camera.GetFront());
 
     m_shadowRenderer->Render(*m_renderer, m_flashlight);

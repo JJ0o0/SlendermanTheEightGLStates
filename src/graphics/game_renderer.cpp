@@ -60,7 +60,7 @@ void GameRenderer::drawScene(Shader& shader) {
     m_mesh->Draw();
 
     auto cube = glm::mat4(1.0f);
-    cube = glm::translate(cube, {0.0f, 1.0f, 2.0f});
+    cube = glm::translate(cube, {0.0f, 1.0f, 0.0f});
     cube = glm::scale(cube, glm::vec3{0.8f});
 
     shader.SetMat4("uModel", cube);

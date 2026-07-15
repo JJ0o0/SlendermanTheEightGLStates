@@ -145,11 +145,21 @@ float calculateShadow() {
         return 0.0;
     }
 
-    float closestDepth = texture(uShadowMap, projCoords.xy).r;
     float currDepth = projCoords.z;
-
     float bias = 0.0005;
-    float shadow =  currDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    vec2 texelSize = 1.0 / vec2(textureSize(uShadowMap, 0));
+
+    float shadowSum = 0.0;
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec2 offset = vec2(x, y) * texelSize;
+            float neighbor = texture(uShadowMap, projCoords.xy + offset).r;
+            shadowSum += (currDepth - bias > neighbor) ? 1.0 : 0.0;
+        }
+    }
+
+    float shadow = shadowSum / 9.0;
 
     return shadow;
 }
