@@ -84,13 +84,19 @@ void ModelLoader::attachMeshAndMaterial(
     if (uvIt != primitive.attributes.end()) {
         const auto& accessor = asset.accessors[uvIt->accessorIndex];
         fastgltf::iterateAccessorWithIndex<glm::vec2>(asset, accessor,[&](glm::vec2 uv, size_t idx) { 
-            vertices[idx].TexCoord = uv; 
+            glm::vec2 invertedUV = {
+                uv.x,
+                1.0f - uv.y
+            };
+
+            vertices[idx].TexCoord = invertedUV; 
         });
     }
 
     // Vertex Tangent
     auto tanIt = primitive.findAttribute("TANGENT");
-    if (tanIt != primitive.attributes.end()) {
+    bool hasTangents = tanIt != primitive.attributes.end();
+    if (hasTangents) {
         const auto& accessor = asset.accessors[tanIt->accessorIndex];
         fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor,[&](glm::vec4 t, size_t idx) { 
             vertices[idx].Tangent = glm::vec3(t); 
@@ -105,6 +111,8 @@ void ModelLoader::attachMeshAndMaterial(
         fastgltf::iterateAccessorWithIndex<uint32_t>(asset, accessor,[&](uint32_t index, size_t idx) { 
             indices[idx] = index; 
         });
+
+        if (!hasTangents) generateTangents(vertices, indices);
     }
 
     entity.SetMesh(std::make_shared<Mesh>(vertices, indices));
@@ -133,6 +141,60 @@ void ModelLoader::attachMeshAndMaterial(
 
         pbrMaterial->SetTextures(textures);
         entity.SetMaterial(pbrMaterial);
+    }
+}
+
+void ModelLoader::generateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+    std::vector<glm::vec3> accumulator(vertices.size(), glm::vec3(0.0f));
+
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        uint32_t i0 = indices[i]; 
+        uint32_t i1 = indices[i + 1];
+        uint32_t i2 = indices[i + 2];
+
+        const glm::vec3& pos0 = vertices[i0].Position;
+        const glm::vec3& pos1 = vertices[i1].Position;
+        const glm::vec3& pos2 = vertices[i2].Position;
+
+        const glm::vec2& uv0 = vertices[i0].TexCoord;
+        const glm::vec2& uv1 = vertices[i1].TexCoord;
+        const glm::vec2& uv2 = vertices[i2].TexCoord;
+
+        glm::vec3 edge1 = pos1 - pos0;
+        glm::vec3 edge2 = pos2 - pos0;
+
+        glm::vec2 deltaUV1 = uv1 - uv0;
+        glm::vec2 deltaUV2 = uv2 - uv0;
+
+        float denom = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+        
+        // Se os três pontos tem o mesmo UV, denom vira infinito.
+        if (std::abs(denom) < 1e-8f) continue;
+
+        float f = 1.0f / denom;
+        glm::vec3 tangent = f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+
+        accumulator[i0] += tangent;
+        accumulator[i1] += tangent;
+        accumulator[i2] += tangent;
+    }
+
+    for (size_t i = 0; i < vertices.size(); i++) {
+        if (glm::length(accumulator[i]) < 1e-8f) {
+            glm::vec3 result = glm::cross(vertices[i].Normal, glm::vec3(0.0f, 1.0f, 0.0f));
+
+            if (glm::length(result) < 1e-8f) {
+                vertices[i].Tangent = glm::normalize(
+                    glm::cross(vertices[i].Normal, glm::vec3(1.0f, 0.0f, 0.0f))
+                );
+
+                continue;
+            }
+
+            vertices[i].Tangent = glm::normalize(result);
+        } else {
+            vertices[i].Tangent = glm::normalize(accumulator[i]);
+        }
     }
 }
 

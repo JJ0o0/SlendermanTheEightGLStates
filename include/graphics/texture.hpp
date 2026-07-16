@@ -36,6 +36,7 @@ struct TextureProperties {
 class Texture {
     public:
         Texture(const TextureProperties& properties = {});
+        Texture(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb = false);
         ~Texture();
 
         void ChangeImage(const std::string& filepath);
@@ -55,4 +56,6 @@ class Texture {
         GLenum toGLenum(T option) {
             return static_cast<GLenum>(option);
         }
+
+        void createSolidColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb);
 };

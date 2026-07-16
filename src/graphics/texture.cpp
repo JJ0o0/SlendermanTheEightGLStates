@@ -4,8 +4,12 @@
 
 Texture::Texture(const TextureProperties& properties) : m_properties(properties) {
     glGenTextures(1, &m_id);
-
     ChangeImage(m_properties.ImagePath);
+}
+
+Texture::Texture(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb) : m_properties({}) {
+    glGenTextures(1, &m_id);
+    createSolidColor(r, g, b, a, srgb);
 }
 
 Texture::~Texture() {
@@ -117,4 +121,35 @@ void Texture::ChangeMagFilter(TextureFilterOption option) {
     Bind(m_properties.Unit);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, toGLenum(m_properties.MagFilter));
+}
+
+void Texture::createSolidColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb) {
+    uint8_t pixel[4] { r, g, b, a};
+
+    Bind(m_properties.Unit);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8,
+        1, 1, 0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixel
+    );
+
+    m_properties.Id = m_id;
+    m_properties.Width = 1;
+    m_properties.Height = 1;
+    m_properties.Channels = 4;
+    m_properties.Mipmaps = false;
+    m_properties.SRGB = srgb;
+    m_properties.Wrap = TextureWrapOption::Repeat;
+    m_properties.MinFilter = TextureFilterOption::Nearest;
+    m_properties.MagFilter = TextureFilterOption::Nearest;
 }

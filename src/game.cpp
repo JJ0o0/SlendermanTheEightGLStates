@@ -94,9 +94,10 @@ void Game::loadResources() {
 
     floor.SetCollider(Collider(floorTransform.Scale));
 
-    auto& duck = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/duck/Duck.gltf", *m_defaultShader);
-    duck.GetTransform().Position.y = 1.0f;
-
+    auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/character/scene.gltf", *m_defaultShader);
+    model.GetTransform().Position.z = 1.0f;
+    model.GetTransform().Position.y = -0.5f;
+    
     // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
         .Faces = {

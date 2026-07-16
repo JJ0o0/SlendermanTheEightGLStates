@@ -24,4 +24,6 @@ class PBRMaterial : public Material {
         Shader& m_shader;
 
         PBRTextureSet m_textures;
+
+        static PBRTextureSet& fallbacks();
 };

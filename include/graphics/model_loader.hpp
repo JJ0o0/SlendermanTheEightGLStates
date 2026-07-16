@@ -2,8 +2,10 @@
 
 #include <world.hpp>
 #include <graphics/shader.hpp>
+#include <graphics/vertex.hpp>
 #include <fastgltf/core.hpp>
 #include <string>
+#include <vector>
 
 class ModelLoader {
     public:
@@ -16,6 +18,8 @@ class ModelLoader {
             const std::string& baseDir, 
             Shader& shader
         );
+
+        static void generateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
         static void applyNodeTransform(const fastgltf::Node& node, Transform& transform);
         

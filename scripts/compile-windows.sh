@@ -56,6 +56,7 @@ if [ ! -f "$EXE_PATH" ]; then
 fi
 
 # Copiando assets
+rm -rf build-windows/assets
 rsync -a assets/ build-windows/assets/
 
 echo ">> Build concluído: $EXE_PATH"
