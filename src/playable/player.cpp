@@ -25,12 +25,19 @@ void Player::Update(float deltatime, const World& world) {
     }
 
     updateCamera();
-    updateFlashlight();
+    updateFlashlight(deltatime);
 
-    m_camera.UpdateBob(deltatime, glm::length(glm::vec3(m_velocity.x, 0, m_velocity.z)));
+    float intensity = 0.0f;
+    switch (m_state) {
+        case MovementState::Sprinting: intensity = 1.0f; break;
+        case MovementState::Walking: intensity = 0.5f; break;
+        default: intensity = 0.0f; break;
+    }
+
+    m_camera.UpdateBob(deltatime, intensity, m_state == MovementState::Sprinting);
 }
 
-void Player::ProcessInput(GLFWwindow* glfwWindow) {
+void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
     glm::vec3 forward = m_camera.GetFront();
     forward.y = 0.0f;
     forward = glm::normalize(forward);
@@ -41,16 +48,43 @@ void Player::ProcessInput(GLFWwindow* glfwWindow) {
 
     glm::vec3 direction{0.0f};
 
-    float speed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = m_properties.SprintSpeed;
-    else speed = m_properties.WalkSpeed;
-
     if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS) direction += forward;
     if (glfwGetKey(glfwWindow, GLFW_KEY_S) == GLFW_PRESS) direction -= forward;
     if (glfwGetKey(glfwWindow, GLFW_KEY_D) == GLFW_PRESS) direction += right;
     if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS) direction -= right;
 
-    if (glm::length(direction) > 0.0f) direction = glm::normalize(direction);
+    bool isMoving = glm::length(direction) > 0.0f;
+    if (isMoving) direction = glm::normalize(direction);
+
+    bool wantsSprint = glfwGetKey(glfwWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+    bool canSprint = wantsSprint && isMoving && !m_isExhausted && m_stamina > 0.0f;
+
+    if (canSprint) m_state = MovementState::Sprinting;
+    else if (isMoving) m_state = MovementState::Walking;
+    else m_state = MovementState::Idle;
+
+    if (m_state == MovementState::Sprinting) {
+        m_stamina -= m_properties.StaminaDrainRate * deltatime;
+
+        if (m_stamina <= 0.0f) {
+            m_stamina = 0.0f;
+            m_isExhausted = true;
+        }
+    } else {
+        m_stamina += m_properties.StaminaRegenRate * deltatime;
+        m_stamina = glm::min(m_stamina, m_properties.MaxStamina);
+
+        if (m_isExhausted && m_stamina >= m_properties.MaxStamina * m_properties.ExhaustedThreshold) {
+            m_isExhausted = false;
+        }
+    }
+
+    float speed;
+    switch (m_state) {
+        case MovementState::Sprinting: speed = m_properties.SprintSpeed; break;
+        case MovementState::Walking: speed = m_properties.WalkSpeed; break;
+        default: speed = 0.0f; break;
+    }
 
     m_velocity.x = direction.x * speed;
     m_velocity.z = direction.z * speed;
@@ -69,12 +103,13 @@ AABB Player::GetCollision() const {
 
 void Player::updateCamera() { m_eyePosition = m_position + glm::vec3(0.0f, m_properties.EyeHeight, 0.0f); }
 
-void Player::updateFlashlight() {
+void Player::updateFlashlight(float deltatime) {
     glm::vec3 right = m_camera.GetRight();
     glm::vec3 up = m_camera.GetUp();
 
     glm::vec3 position = m_eyePosition + right * m_properties.FlashlightOffset.x - up * m_properties.FlashlightOffset.y;
 
-    m_flashlight.SetPosition(position);
-    m_flashlight.SetDirection(m_camera.GetFront());
+    m_flashlight.SetTargetPosition(position);
+    m_flashlight.SetTargetDirection(m_camera.GetFront());
+    m_flashlight.Update(deltatime);
 }

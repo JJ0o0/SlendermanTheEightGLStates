@@ -36,7 +36,7 @@ void Game::Initialize() {
 }
 
 void Game::Update(float deltatime) {
-    m_player.ProcessInput(m_window.GetHandle());
+    m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
 }
 
@@ -89,7 +89,7 @@ void Game::loadResources() {
 
     auto& floorTransform = floor.GetTransform();
     floorTransform.Position.y = -1.0f;
-    floorTransform.Scale = {10.0f, 0.1f, 10.0f};
+    floorTransform.Scale = {50.0f, 0.1f, 50.0f};
 
     floor.SetCollider(Collider(floorTransform.Scale));
 

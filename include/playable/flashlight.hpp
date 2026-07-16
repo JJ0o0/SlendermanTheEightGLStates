@@ -11,6 +11,9 @@ struct FlashlightProperties {
     float InnerCutoff = 25.0f;
     float OuterCutoff = 35.0f;
 
+    float PositionSwaySpeed = 9.0f;
+    float DirectionSwaySpeed = 8.0f;
+
     glm::vec3 Radiance{18.0f, 17.5f, 16.5f};
 };
 
@@ -21,11 +24,13 @@ class Flashlight {
                 .ImagePath = "assets/textures/cookie.png"
             }), m_properties(properties) {}
         
+        void Update(float deltatime);
+
         void Bind(int unit = 3) const;
         void Unbind() const;
 
-        void SetPosition(const glm::vec3& position) { m_position = position; }
-        void SetDirection(const glm::vec3& direction) { m_direction = direction; }
+        void SetTargetPosition(const glm::vec3& position) { m_targetPosition = position; }
+        void SetTargetDirection(const glm::vec3& direction) { m_targetDirection = direction; }
 
         const glm::vec3 GetPosition() const { return m_position; }
         const glm::vec3 GetDirection() const { return m_direction; }
@@ -36,6 +41,9 @@ class Flashlight {
 
         FlashlightProperties m_properties;
         
+        glm::vec3 m_targetPosition{0.0f};
+        glm::vec3 m_targetDirection{0.0f};
+
         glm::vec3 m_position{0.0f};
         glm::vec3 m_direction{0.0f};
 };

@@ -1,7 +1,11 @@
 #include <application.hpp>
 #include <game.hpp>
+#include <cstdlib>
+#include <ctime>
 
 int Application::Run() {
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
     m_window = std::make_unique<Window>();
     if (!m_window->Initialize()) return -1;
 

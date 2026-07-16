@@ -33,45 +33,46 @@ void Camera::HandleMouseMovement(double xpos, double ypos) {
     m_front = glm::normalize(direction);
 }
 
-void Camera::UpdateBob(float deltatime, float velocity) {
-    float targetOffset = 0.0f;
-    float targetRoll = 0.0f;
-
-    if (velocity > 0.1f) {
-        m_bob.Timer += m_bob.Frequency * deltatime;
-
-        float vertical = std::sin(m_bob.Timer);
-        float horizontal = std::sin(m_bob.Timer);
-
-        float intensity = glm::clamp(velocity / 6.0f, 0.0f, 1.0f);
-
-        float bobAmount = glm::mix(
-            m_bob.WalkAmount,
-            m_bob.RunAmount,
-            intensity
-        );
-
-        float tiltAmount = glm::mix(
-            m_bob.WalkTilt,
-            m_bob.RunTilt,
-            intensity
-        );
-
-        targetOffset = vertical * bobAmount;
-        targetRoll = horizontal * tiltAmount;
+void Camera::UpdateBob(float deltatime, float intensity, bool isSprinting) {
+    intensity = glm::clamp(intensity, 0.0f, 1.0f);
+    
+    if (isSprinting && !m_wasSprinting) { 
+        m_sprintBurst = 1.0f;
+        m_jitterPhaseA = (static_cast<float>(rand()) / RAND_MAX) * glm::two_pi<float>();
+        m_jitterPhaseB = (static_cast<float>(rand()) / RAND_MAX) * glm::two_pi<float>();
     }
 
-    m_bobOffset = glm::mix(
-        m_bobOffset,
-        targetOffset,
-        deltatime * m_bob.Smooth
+    m_wasSprinting = isSprinting;
+
+    m_sprintBurst = glm::mix(m_sprintBurst, 0.0f, deltatime * m_bob.SprintBurstDecay);
+
+    float runFrequency = glm::mix(m_bob.RunFrequency,m_bob.SprintStartFrequency,m_sprintBurst);
+    float runAmount = glm::mix(m_bob.RunAmount, m_bob.SprintStartAmount,m_sprintBurst);
+    float runTilt = glm::mix(m_bob.RunTilt,m_bob.SprintStartTilt,m_sprintBurst);
+
+    float frequency = glm::mix(m_bob.WalkFrequency, runFrequency, intensity);
+    m_bob.Timer += frequency * deltatime;
+
+    float vertical = std::sin(m_bob.Timer * 2.0f);
+    float horizontal = std::sin(m_bob.Timer);
+
+    float jitter = (
+        std::sin(m_bob.Timer * m_bob.JitterFrequencyA + m_jitterPhaseA) * 0.6f + 
+        std::sin(m_bob.Timer * m_bob.JitterFrequencyB + m_jitterPhaseB) * 0.4f
     );
 
-    m_roll = glm::mix(
-        m_roll,
-        targetRoll,
-        deltatime * m_bob.Smooth
-    );
+    float bobAmount = glm::mix(m_bob.WalkAmount, runAmount, intensity);
+    float tiltAmount = glm::mix(m_bob.WalkTilt, runTilt, intensity);
+
+    float targetOffset = vertical * bobAmount * intensity;
+    float targetRoll = horizontal * tiltAmount * intensity + jitter * m_bob.SprintJitterAmount * m_sprintBurst;
+
+    m_bobOffset = glm::mix(m_bobOffset, targetOffset, deltatime * m_bob.Smooth);
+    m_roll = glm::mix(m_roll, targetRoll, deltatime * m_bob.Smooth);
+
+    float sprintFOVBoost = glm::mix(m_properties.SprintFOVBoost, m_properties.SprintStartFOVBoost, m_sprintBurst);
+    float targetFOV = m_properties.FieldOfView + (isSprinting ? sprintFOVBoost : 0.0f);
+    m_currentFOV = glm::mix(m_currentFOV, targetFOV, deltatime * m_properties.FOVTransitionSpeed);
 }
 
 void Camera::SetAspectRatio(int width, int height) {
@@ -100,7 +101,7 @@ glm::mat4 Camera::GetViewMatrix(glm::vec3 position) {
 
 glm::mat4 Camera::GetProjectionMatrix() const {
     return glm::perspective(
-        glm::radians(m_properties.FieldOfView),
+        glm::radians(m_currentFOV),
         m_properties.AspectRatio,
         m_properties.NearPlane,
         m_properties.FarPlane

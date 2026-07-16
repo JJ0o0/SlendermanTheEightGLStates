@@ -5,15 +5,24 @@
 struct CameraBob {
     float Timer = 0.0f;
 
-    float Frequency = 5.0f;
+    float WalkFrequency = 6.0f;
+    float RunFrequency = 10.5f;
+    float SprintStartFrequency = 15.0f;
+    float SprintBurstDecay = 4.0f;
 
     float WalkAmount = 0.012f;
-    float RunAmount = 0.025f;
+    float RunAmount = 0.030f;
+    float SprintStartAmount = 0.045f;
 
     float WalkTilt = 0.5f;
-    float RunTilt = 1.0f;
+    float RunTilt = 1.6f;
+    float SprintStartTilt = 2.6f;
 
-    float Smooth = 8.0f;
+    float JitterFrequencyA = 17.0f;
+    float JitterFrequencyB = 23.0f;
+    float SprintJitterAmount = 1.4f;
+
+    float Smooth = 9.0f;
 };
 
 struct CameraProperties {
@@ -21,6 +30,10 @@ struct CameraProperties {
     float AspectRatio = 4.0f / 3.0f;
     float NearPlane = 0.1f;
     float FarPlane = 100.0f;
+
+    float SprintFOVBoost = 4.0f;
+    float SprintStartFOVBoost = 10.0f;
+    float FOVTransitionSpeed = 2.5f;
 
     float MouseSensitivity = 0.15f;
     float MinimumPitchClamp = -89.0f;
@@ -34,7 +47,7 @@ class Camera {
         void HandleMouseMovement(double xpos, double ypos);
         void ResetMouseMovement() { m_firstMouse = true; }
 
-        void UpdateBob(float deltatime, float velocity);
+        void UpdateBob(float deltatime, float intensity, bool isSprinting);
 
         void SetAspectRatio(int width, int height);
 
@@ -48,12 +61,17 @@ class Camera {
         CameraBob m_bob;
 
         bool m_firstMouse = true;
+        bool m_wasSprinting = false;
         
         float m_yaw = -90.0f;
 		float m_pitch = 0.0f;
         float m_roll = 0.0f;
         float m_speed = 0.0f;
         float m_bobOffset = 0.0f;
+        float m_jitterPhaseA = 0.0f;
+        float m_jitterPhaseB = 0.0f;
+        float m_sprintBurst = 0.0f;
+        float m_currentFOV = m_properties.FieldOfView;
 
 		glm::vec2 m_lastMousePosition{0.0f};
 
