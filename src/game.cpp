@@ -2,6 +2,7 @@
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <graphics/model_loader.hpp>
 #include <iostream>
 
 void Game::Initialize() {
@@ -92,6 +93,9 @@ void Game::loadResources() {
     floorTransform.Scale = {50.0f, 0.1f, 50.0f};
 
     floor.SetCollider(Collider(floorTransform.Scale));
+
+    auto& duck = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/duck/Duck.gltf", *m_defaultShader);
+    duck.GetTransform().Position.y = 1.0f;
 
     // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{

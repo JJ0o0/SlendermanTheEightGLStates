@@ -13,6 +13,8 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
+add_subdirectory(external/fastgltf)
+
 add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
     "src/game.cpp"
@@ -21,6 +23,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     
     "src/graphics/shader.cpp"
     "src/graphics/mesh.cpp"
+    "src/graphics/model_loader.cpp"
     "src/graphics/texture.cpp"
     "src/graphics/cubemap.cpp"
     "src/graphics/framebuffer.cpp"
@@ -71,4 +74,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         OpenGL::GL
         glfw
         glm::glm
+        fastgltf::fastgltf
 )

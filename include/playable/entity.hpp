@@ -15,6 +15,7 @@ class Entity {
         void SetName(const std::string& name) { m_name = name; }
         const std::string& GetName() const { return m_name; }
 
+        bool HasMesh() const { return m_mesh != nullptr; }
         void SetMesh(const std::shared_ptr<Mesh>& mesh) { m_mesh = mesh; }
         const std::shared_ptr<Mesh>& GetMesh() const { return m_mesh; }
 
@@ -28,10 +29,22 @@ class Entity {
 
         Transform& GetTransform() { return m_transform; }
         const Transform& GetTransform() const { return m_transform; }
+
+        void SetParent(Entity* parent) { m_parent = parent; }
+        Entity* GetParent() const { return m_parent; }
+
+        glm::mat4 GetWorldModel() const {
+            glm::mat4 local = m_transform.GetModel();
+            return m_parent ? (m_parent->GetWorldModel() * local) : local;
+        }
+
+        glm::vec3 GetWorldPosition() const { return glm::vec3(GetWorldModel()[3]); }
     private:
         std::string m_name;
         std::shared_ptr<Mesh> m_mesh; // alguma classe *Model* para lidar com várias meshes, por enquanto só uma
         std::shared_ptr<PBRMaterial> m_material;
         Transform m_transform{};
         std::optional<Collider> m_collider;
+
+        Entity* m_parent = nullptr; 
 };

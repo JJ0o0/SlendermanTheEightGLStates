@@ -37,7 +37,7 @@ void GameRenderer::drawScene(const World& world, Shader& shader) {
         if (!entity->GetMesh()) continue;
 
         entity->GetMaterial()->Bind();
-            shader.SetMat4("uModel", entity->GetTransform().GetModel());
+            shader.SetMat4("uModel", entity->GetWorldModel());
             entity->GetMesh()->Draw();
         entity->GetMaterial()->Unbind();
     }

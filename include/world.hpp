@@ -7,7 +7,7 @@
 
 class World {
     public:
-        Entity& CreateEntity(const std::string& name);
+        Entity& CreateEntity(const std::string& name, Entity* parent = nullptr);
         bool CheckCollision(const AABB& collider) const;
 
         const std::vector<std::unique_ptr<Entity>>& GetEntities() const { return m_entities; }
