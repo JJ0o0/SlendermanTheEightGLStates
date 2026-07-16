@@ -54,9 +54,10 @@ class ModelLoader {
             std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
         );
 
-        static std::optional<std::string> resolveTexturePath(
-            const fastgltf::Asset& asset, 
-            const std::optional<size_t>& textureIndex, 
-            const std::string& baseDirectory
+        static std::shared_ptr<Texture> loadTexture(
+            const fastgltf::Asset& asset,
+            size_t textureIndex,
+            const std::string& baseDirectory,
+            bool srgb
         );
 };

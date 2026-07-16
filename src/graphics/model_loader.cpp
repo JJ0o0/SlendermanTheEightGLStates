@@ -162,21 +162,17 @@ void ModelLoader::attachMeshAndMaterial(
         auto pbrMaterial = std::make_shared<PBRMaterial>(shader);
 
         PBRTextureSet textures;
-        auto albedoPath = material.pbrData.baseColorTexture
-            ? resolveTexturePath(asset, material.pbrData.baseColorTexture->textureIndex, baseDir)
-            : std::nullopt;
+        if (material.pbrData.baseColorTexture) {
+            textures.Albedo = loadTexture(asset, material.pbrData.baseColorTexture->textureIndex, baseDir, true);
+        }
 
-        auto normalPath = material.normalTexture
-            ? resolveTexturePath(asset, material.normalTexture->textureIndex, baseDir)
-            : std::nullopt;
+        if (material.normalTexture) {
+            textures.Normal = loadTexture(asset, material.normalTexture->textureIndex, baseDir, false);
+        }
 
-        auto armPath = material.pbrData.metallicRoughnessTexture
-            ? resolveTexturePath(asset, material.pbrData.metallicRoughnessTexture->textureIndex, baseDir)
-            : std::nullopt;
-        
-        if (albedoPath) textures.Albedo = std::make_shared<Texture>(TextureProperties{ .SRGB = true, .ImagePath = *albedoPath });
-        if (normalPath) textures.Normal = std::make_shared<Texture>(TextureProperties{ .ImagePath = *normalPath });
-        if (armPath) textures.ARM = std::make_shared<Texture>(TextureProperties{ .ImagePath = *armPath });
+        if (material.pbrData.metallicRoughnessTexture) {
+            textures.ARM = loadTexture(asset, material.pbrData.metallicRoughnessTexture->textureIndex, baseDir, false);
+        }
 
         pbrMaterial->SetTextures(textures);
         entity.SetMaterial(pbrMaterial);
@@ -238,7 +234,7 @@ std::vector<AnimationClip> ModelLoader::parseAnimations(
                 case fastgltf::AnimationPath::Translation: channel.Path = AnimationPath::Translation; break;
                 case fastgltf::AnimationPath::Rotation: channel.Path = AnimationPath::Rotation; break;
                 case fastgltf::AnimationPath::Scale: channel.Path = AnimationPath::Scale; break;
-                default: continue; // Weights, talvez depois
+                default: continue;
             }
 
             const auto& sampler = animation.samplers[channelData.samplerIndex];
@@ -347,7 +343,7 @@ void ModelLoader::applyNodeTransform(const fastgltf::Node& node, Transform& tran
     transform.Scale = { trs.scale.x(), trs.scale.y(), trs.scale.z() };
 
     glm::quat rotation { trs.rotation.w(), trs.rotation.x(), trs.rotation.y(), trs.rotation.z() };
-    transform.Rotation = glm::degrees(glm::eulerAngles(rotation));
+    transform.Rotation = rotation;
 }
 
 void ModelLoader::createNodeEntity(
@@ -396,21 +392,56 @@ void ModelLoader::createNodeEntity(
     }
 }
 
-std::optional<std::string> ModelLoader::resolveTexturePath(
-    const fastgltf::Asset& asset, 
-    const std::optional<size_t>& textureIndex, 
-    const std::string& baseDirectory
+std::shared_ptr<Texture> ModelLoader::loadTexture(
+    const fastgltf::Asset& asset,
+    size_t textureIndex,
+    const std::string& baseDirectory,
+    bool srgb
 ) {
-    if (!textureIndex.has_value()) return std::nullopt;
-
-    const auto& texture = asset.textures[*textureIndex];
-    if (!texture.imageIndex.has_value()) return std::nullopt;
+    const auto& texture = asset.textures[textureIndex];
+    if (!texture.imageIndex.has_value()) return nullptr;
 
     const auto& image = asset.images[*texture.imageIndex];
-    if (const auto* uri = std::get_if<fastgltf::sources::URI>(&image.data)) {
-        return (std::filesystem::path(baseDirectory) / uri->uri.fspath()).string();
-    }
+    std::shared_ptr<Texture> result;
 
-    std::cerr << "Embedded texture ignored, export with external textures.\n";
-    return std::nullopt;
+    auto loadFromBytes = [&](const std::byte* bytes, size_t size) {
+        result = std::make_shared<Texture>(
+            reinterpret_cast<const uint8_t*>(bytes), size,
+            TextureProperties{ .SRGB = srgb }
+        );
+    };
+
+    std::visit(fastgltf::visitor {
+        [](auto&) { std::cerr << "Image format not supported on glTF.\n"; },
+
+        [&](const fastgltf::sources::URI& uri) {
+            std::string path = (std::filesystem::path(baseDirectory) / uri.uri.fspath()).string();
+            result = std::make_shared<Texture>(TextureProperties{ .SRGB = srgb, .ImagePath = path });
+        },
+
+        [&](const fastgltf::sources::Array& array) {
+            loadFromBytes(array.bytes.data(), array.bytes.size());
+        },
+
+        [&](const fastgltf::sources::Vector& vector) {
+            loadFromBytes(vector.bytes.data(), vector.bytes.size());
+        },
+
+        [&](const fastgltf::sources::BufferView& bufferViewSource) {
+            const auto& bufferView = asset.bufferViews[bufferViewSource.bufferViewIndex];
+            const auto& buffer = asset.buffers[bufferView.bufferIndex];
+
+            std::visit(fastgltf::visitor {
+                [](auto&) { std::cerr << "Buffer format not supported for embed image.\n"; },
+                [&](const fastgltf::sources::Array& array) {
+                    loadFromBytes(array.bytes.data() + bufferView.byteOffset, bufferView.byteLength);
+                },
+                [&](const fastgltf::sources::Vector& vector) {
+                    loadFromBytes(vector.bytes.data() + bufferView.byteOffset, bufferView.byteLength);
+                }
+            }, buffer.data);
+        }
+    }, image.data);
+
+    return result;
 }

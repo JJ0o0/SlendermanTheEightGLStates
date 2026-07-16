@@ -37,6 +37,7 @@ class Texture {
     public:
         Texture(const TextureProperties& properties = {});
         Texture(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb = false);
+        Texture(const uint8_t* data, size_t size, const TextureProperties& properties = {});
         ~Texture();
 
         void ChangeImage(const std::string& filepath);
@@ -58,4 +59,6 @@ class Texture {
         }
 
         void createSolidColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool srgb);
+        void loadFromMemory(const uint8_t* data, size_t size);
+        void uploadPixels(uint8_t* pixels, int width, int height, int numChannels);
 };

@@ -30,9 +30,9 @@ void AnimationClip::Apply(float time) const {
             case AnimationPath::Rotation: {
                 glm::quat qa(a.w, a.x, a.y, a.z);
                 glm::quat qb(b.w, b.x, b.y, b.z);
-                glm::quat result = glm::slerp(qa, qb, t);
+                glm::quat result = glm::normalize(glm::slerp(qa, qb, t));
 
-                transform.Rotation = glm::degrees(glm::eulerAngles(result));
+                transform.Rotation = result;
                 break;
             }
         }
