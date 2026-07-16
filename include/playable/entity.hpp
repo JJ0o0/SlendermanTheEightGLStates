@@ -8,8 +8,8 @@
 #include <optional>
 #include <memory>
 
+class World;
 class Skeleton;
-
 class Entity {
     public:
         Entity(const std::string& name) : m_name(name) {}
@@ -24,11 +24,14 @@ class Entity {
         void SetMaterial(const std::shared_ptr<PBRMaterial>& material) { m_material = material; }
         const std::shared_ptr<PBRMaterial>& GetMaterial() const { return m_material; }
 
-        AABB GetColliderAABB() const { return m_collider->GetAABB(m_transform.Position); }
+        std::optional<AABB> GetWorldBounds() const;
+        AABB GetColliderAABB() const { return m_collider->GetAABB(GetWorldPosition()); }
         bool HasCollider() const { return m_collider.has_value(); }
         void SetCollider(const Collider& collider) { m_collider.emplace(collider); }
         const std::optional<Collider>& GetCollider() const { return m_collider; }
 
+        bool SnapToGround(const World& world, float maxDistance = 100.0f);
+        
         bool HasSkeleton() const { return m_skeleton != nullptr; }
         void SetSkeleton(const std::shared_ptr<Skeleton>& skeleton) { m_skeleton = skeleton; }
         const std::shared_ptr<Skeleton>& GetSkeleton() const { return m_skeleton; }

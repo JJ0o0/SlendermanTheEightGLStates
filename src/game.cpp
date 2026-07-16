@@ -96,8 +96,11 @@ void Game::loadResources() {
     floor.SetCollider(Collider(floorTransform.Scale));
 
     auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/spongebob_dancing_18.glb", *m_defaultShader, nullptr, &m_animations);
-    model.GetTransform().Scale = glm::vec3(10.0f);
-
+    //model.GetTransform().RotateEuler({45.0f, 0.0f, 0.0f});
+    model.GetTransform().Scale = glm::vec3(5.0f);
+    model.SnapToGround(m_world);
+    model.GetTransform().Position.y += 0.1f;
+    
     if (!m_animations.empty()) m_animator.Play(m_animations[0]);
 
     // CUBEMAPS

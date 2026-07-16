@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graphics/vertex.hpp>
+#include <playable/aabb.hpp>
 #include <glad/gl.h>
 #include <cstdint>
 #include <vector>
@@ -16,7 +17,12 @@ class Mesh {
         Mesh& operator=(Mesh&& other) noexcept;
 
         void Draw() const;
+
+        // NÃO É COLISÃO! São dados dos vertíces para outros fins além de colisão.
+        const AABB& GetLocalBounds() const { return m_localBounds; }
     private:
+        AABB m_localBounds;
+
         uint32_t m_vao = 0;
         uint32_t m_vbo = 0;
         uint32_t m_ebo = 0;

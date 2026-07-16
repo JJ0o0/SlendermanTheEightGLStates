@@ -1,9 +1,18 @@
 #include <graphics/mesh.hpp>
 #include <glad/gl.h>
 #include <cstddef>
+#include <limits>
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
     : m_indexCount(indices.size()) {
+    m_localBounds.Minimum = glm::vec3{std::numeric_limits<float>::max()};
+    m_localBounds.Maximum = glm::vec3{std::numeric_limits<float>::lowest()};
+
+    for (const Vertex& vertex : vertices) {
+        m_localBounds.Minimum = glm::min(m_localBounds.Minimum, vertex.Position);
+        m_localBounds.Maximum = glm::max(m_localBounds.Maximum, vertex.Position);
+    }
+
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
 
