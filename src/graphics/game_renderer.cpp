@@ -37,7 +37,7 @@ void GameRenderer::drawScene(const World& world, Shader& shader) {
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
 
-        if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices());
+        if (entity->HasSkeleton()) { shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices()); }
 
         entity->GetMaterial()->Bind();
             shader.SetMat4("uModel", entity->GetWorldModel());

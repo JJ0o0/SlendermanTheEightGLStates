@@ -39,6 +39,7 @@ void Game::Initialize() {
 void Game::Update(float deltatime) {
     m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
+    m_animator.Update(deltatime);
 }
 
 void Game::Render() {
@@ -94,10 +95,13 @@ void Game::loadResources() {
 
     floor.SetCollider(Collider(floorTransform.Scale));
 
-    auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/character/scene.gltf", *m_defaultShader);
-    model.GetTransform().Position.z = 1.0f;
+    auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/character/scene.gltf", *m_defaultShader, nullptr, &m_animations);
     model.GetTransform().Position.y = -0.5f;
-    
+    model.GetTransform().Rotation.x = 45.0f;
+    model.GetTransform().Scale = glm::vec3{0.005f};
+
+    if (!m_animations.empty()) m_animator.Play(m_animations[0]);
+
     // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
         .Faces = {

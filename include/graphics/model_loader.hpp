@@ -4,6 +4,7 @@
 #include <graphics/shader.hpp>
 #include <graphics/vertex.hpp>
 #include <graphics/skeleton.hpp>
+#include <graphics/animation/animation_clip.hpp>
 #include <fastgltf/core.hpp>
 #include <unordered_map>
 #include <string>
@@ -11,7 +12,13 @@
 
 class ModelLoader {
     public:
-        static Entity& LoadModelIntoWorld(World& world, const std::string& path, Shader& shader, Entity* parent = nullptr);
+        static Entity& LoadModelIntoWorld(
+            World& world, 
+            const std::string& path, 
+            Shader& shader, 
+            Entity* parent = nullptr,
+            std::vector<AnimationClip>* outAnimations = nullptr
+        );
     private:
         static void attachMeshAndMaterial(
             Entity& entity, 
@@ -24,6 +31,11 @@ class ModelLoader {
         static Skeleton parseSkin(
             const fastgltf::Asset& asset,
             const fastgltf::Skin& skin,
+            const std::unordered_map<size_t, Entity*>& nodeToEntity
+        );
+
+        static std::vector<AnimationClip> parseAnimations(
+            const fastgltf::Asset& asset,
             const std::unordered_map<size_t, Entity*>& nodeToEntity
         );
 

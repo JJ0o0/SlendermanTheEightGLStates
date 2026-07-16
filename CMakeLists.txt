@@ -33,6 +33,8 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/skybox_mesh.cpp"
     "src/graphics/skybox_renderer.cpp"
     "src/graphics/game_renderer.cpp"
+    "src/graphics/animation/animation_clip.cpp"
+    "src/graphics/animation/animator.cpp"
     "src/graphics/materials/basic_material.cpp"
     "src/graphics/materials/pbr_material.cpp"
 

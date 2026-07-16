@@ -11,7 +11,8 @@ Entity& ModelLoader::LoadModelIntoWorld(
     World& world, 
     const std::string& path,
     Shader& shader, 
-    Entity* parent
+    Entity* parent,
+    std::vector<AnimationClip>* outAnimations
 ) {
     std::string baseDir = std::filesystem::path(path).parent_path().string();
     Entity& root = world.CreateEntity(std::filesystem::path(path).stem().string(), parent);
@@ -55,7 +56,7 @@ Entity& ModelLoader::LoadModelIntoWorld(
         auto skeleton = std::make_shared<Skeleton>(parseSkin(asset.get(), asset->skins[0], nodeToEntity));
         
         // PARA DEBUG: (Visualiza a cadeia de ossos)
-        // skeleton.DebugPrint();
+        // skeleton->DebugPrint();
 
         for (auto& [nodeIndex, entities] : skinnedMeshEntities) {
             for (Entity* meshEntity : entities) {
@@ -63,6 +64,8 @@ Entity& ModelLoader::LoadModelIntoWorld(
             }
         }
     }
+
+    if (outAnimations) *outAnimations = parseAnimations(asset.get(), nodeToEntity);
 
     return root;
 }
@@ -211,6 +214,75 @@ Skeleton ModelLoader::parseSkin(
     }
 
     return skeleton;
+}
+
+std::vector<AnimationClip> ModelLoader::parseAnimations(
+    const fastgltf::Asset& asset,
+    const std::unordered_map<size_t, Entity*>& nodeToEntity
+) {
+    std::vector<AnimationClip> clips;
+
+    for (const auto& animation : asset.animations) {
+        AnimationClip clip;
+
+        for (const auto& channelData : animation.channels) {
+            if (!channelData.nodeIndex.has_value()) continue;
+
+            auto it = nodeToEntity.find(*channelData.nodeIndex);
+            if (it == nodeToEntity.end()) continue;
+
+            AnimationChannel channel;
+            channel.Target = it->second;
+
+            switch (channelData.path) {
+                case fastgltf::AnimationPath::Translation: channel.Path = AnimationPath::Translation; break;
+                case fastgltf::AnimationPath::Rotation: channel.Path = AnimationPath::Rotation; break;
+                case fastgltf::AnimationPath::Scale: channel.Path = AnimationPath::Scale; break;
+                default: continue; // Weights, talvez depois
+            }
+
+            const auto& sampler = animation.samplers[channelData.samplerIndex];
+            bool isCubicSpline = sampler.interpolation == fastgltf::AnimationInterpolation::CubicSpline;
+
+            const auto& inputAccessor = asset.accessors[sampler.inputAccessor];
+            channel.Times.resize(inputAccessor.count);
+            fastgltf::iterateAccessorWithIndex<float>(asset, inputAccessor, [&](float t, size_t idx) {
+                channel.Times[idx] = t;
+            });
+
+            const auto& outputAccessor = asset.accessors[sampler.outputAccessor];
+            size_t stride = isCubicSpline ? 3 : 1;
+            size_t offset = isCubicSpline ? 1 : 0;
+
+            channel.Values.resize(channel.Times.size());
+
+            if (channel.Path == AnimationPath::Rotation) {
+                std::vector<glm::vec4> raw(outputAccessor.count);
+                fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, outputAccessor, [&](glm::vec4 v, size_t idx) {
+                    raw[idx] = v;
+                });
+
+                for (size_t i = 0; i < channel.Times.size(); i++) {
+                    channel.Values[i] = raw[i * stride + offset];
+                }
+            } else {
+                std::vector<glm::vec3> raw(outputAccessor.count);
+                fastgltf::iterateAccessorWithIndex<glm::vec3>(asset, outputAccessor, [&](glm::vec3 v, size_t idx) {
+                    raw[idx] = v;
+                });
+                
+                for (size_t i = 0; i < channel.Times.size(); i++) {
+                    channel.Values[i] = glm::vec4(raw[i * stride + offset], 0.0f);
+                }
+            }
+
+            clip.AddChannel(std::move(channel));
+        }
+
+        clips.push_back(std::move(clip));
+    }
+
+    return clips;
 }
 
 void ModelLoader::generateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
