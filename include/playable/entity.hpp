@@ -8,6 +8,8 @@
 #include <optional>
 #include <memory>
 
+class Skeleton;
+
 class Entity {
     public:
         Entity(const std::string& name) : m_name(name) {}
@@ -27,6 +29,10 @@ class Entity {
         void SetCollider(const Collider& collider) { m_collider.emplace(collider); }
         const std::optional<Collider>& GetCollider() const { return m_collider; }
 
+        bool HasSkeleton() const { return m_skeleton != nullptr; }
+        void SetSkeleton(const std::shared_ptr<Skeleton>& skeleton) { m_skeleton = skeleton; }
+        const std::shared_ptr<Skeleton>& GetSkeleton() const { return m_skeleton; }
+
         Transform& GetTransform() { return m_transform; }
         const Transform& GetTransform() const { return m_transform; }
 
@@ -45,6 +51,7 @@ class Entity {
         std::shared_ptr<PBRMaterial> m_material;
         Transform m_transform{};
         std::optional<Collider> m_collider;
+        std::shared_ptr<Skeleton> m_skeleton;
 
         Entity* m_parent = nullptr; 
 };

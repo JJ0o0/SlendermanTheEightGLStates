@@ -83,6 +83,11 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& value) {
     glProgramUniformMatrix4fv(m_id, getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
 }
 
+void Shader::SetMat4Array(const std::string& name, const std::vector<glm::mat4>& values) {
+    if (values.empty()) return;
+    glProgramUniformMatrix4fv(m_id, getUniformLocation(name), static_cast<GLsizei>(values.size()), GL_FALSE, glm::value_ptr(values[0]));
+}
+
 int Shader::getUniformLocation(const std::string& name) {
     int success = glGetUniformLocation(m_id, name.c_str());
     if (success == -1) std::cerr << "Could not find \"" << name << "\" uniform.\n";

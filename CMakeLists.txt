@@ -27,6 +27,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/texture.cpp"
     "src/graphics/cubemap.cpp"
     "src/graphics/framebuffer.cpp"
+    "src/graphics/skeleton.cpp"
     "src/graphics/shadow_map.cpp"
     "src/graphics/shadow_renderer.cpp"
     "src/graphics/skybox_mesh.cpp"

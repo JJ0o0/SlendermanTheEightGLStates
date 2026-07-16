@@ -3,7 +3,9 @@
 #include <world.hpp>
 #include <graphics/shader.hpp>
 #include <graphics/vertex.hpp>
+#include <graphics/skeleton.hpp>
 #include <fastgltf/core.hpp>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,12 @@ class ModelLoader {
             Shader& shader
         );
 
+        static Skeleton parseSkin(
+            const fastgltf::Asset& asset,
+            const fastgltf::Skin& skin,
+            const std::unordered_map<size_t, Entity*>& nodeToEntity
+        );
+
         static void generateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
         static void applyNodeTransform(const fastgltf::Node& node, Transform& transform);
@@ -29,7 +37,9 @@ class ModelLoader {
             size_t nodeIndex,
             Entity* parent, 
             const std::string& baseDir, 
-            Shader& shader
+            Shader& shader,
+            std::unordered_map<size_t, Entity*>& nodeToEntity,
+            std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
         );
 
         static std::optional<std::string> resolveTexturePath(

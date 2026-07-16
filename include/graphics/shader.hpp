@@ -2,6 +2,7 @@
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
+#include <vector>
 #include <string>
 
 class Shader {
@@ -19,6 +20,7 @@ class Shader {
         void SetVec3(const std::string& name, const glm::vec3& value);
         void SetVec4(const std::string& name, const glm::vec4& value);
         void SetMat4(const std::string& name, const glm::mat4& value);
+        void SetMat4Array(const std::string& name, const std::vector<glm::mat4>& values);
 
         bool UniformExists(const std::string& name) { return getUniformLocation(name) != -1; }
     private:

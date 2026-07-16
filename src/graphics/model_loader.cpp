@@ -34,6 +34,9 @@ Entity& ModelLoader::LoadModelIntoWorld(
         return root;
     }
 
+    std::unordered_map<size_t, Entity*> nodeToEntity;
+    std::unordered_map<size_t, std::vector<Entity*>> skinnedMeshEntities;
+
     size_t sceneIndex = asset->defaultScene.value_or(0);
     for (size_t nodeIndex : asset->scenes[sceneIndex].nodeIndices) {
         createNodeEntity(
@@ -42,8 +45,23 @@ Entity& ModelLoader::LoadModelIntoWorld(
             nodeIndex, 
             &root, 
             baseDir, 
-            shader
+            shader,
+            nodeToEntity,
+            skinnedMeshEntities
         );
+    }
+
+    if (!asset->skins.empty()) {
+        auto skeleton = std::make_shared<Skeleton>(parseSkin(asset.get(), asset->skins[0], nodeToEntity));
+        
+        // PARA DEBUG: (Visualiza a cadeia de ossos)
+        // skeleton.DebugPrint();
+
+        for (auto& [nodeIndex, entities] : skinnedMeshEntities) {
+            for (Entity* meshEntity : entities) {
+                meshEntity->SetSkeleton(skeleton);
+            }
+        }
     }
 
     return root;
@@ -103,6 +121,24 @@ void ModelLoader::attachMeshAndMaterial(
         });
     }
 
+    // Vertex Joints
+    auto jointsIt = primitive.findAttribute("JOINTS_0");
+    if (jointsIt != primitive.attributes.end()) {
+        const auto& accessor = asset.accessors[jointsIt->accessorIndex];
+        fastgltf::iterateAccessorWithIndex<glm::uvec4>(asset, accessor, [&](glm::uvec4 j, size_t idx) {
+            vertices[idx].JointIndices = glm::ivec4(j);
+        });
+    }
+
+    // Vertex Weights
+    auto weightsIt = primitive.findAttribute("WEIGHTS_0");
+    if (weightsIt != primitive.attributes.end()) {
+        const auto& accessor = asset.accessors[weightsIt->accessorIndex];
+        fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor, [&](glm::vec4 w, size_t idx) {
+            vertices[idx].JointWeights = w;
+        });
+    }
+
     // Indices
     if (primitive.indicesAccessor.has_value()) {
         const auto& accessor = asset.accessors[*primitive.indicesAccessor];
@@ -142,6 +178,39 @@ void ModelLoader::attachMeshAndMaterial(
         pbrMaterial->SetTextures(textures);
         entity.SetMaterial(pbrMaterial);
     }
+}
+
+Skeleton ModelLoader::parseSkin(
+    const fastgltf::Asset& asset,
+    const fastgltf::Skin& skin,
+    const std::unordered_map<size_t, Entity*>& nodeToEntity
+) {
+    Skeleton skeleton;
+    std::vector<glm::mat4> inverseBindMatrices;
+    if (skin.inverseBindMatrices.has_value()) {
+        const auto& accessor = asset.accessors[*skin.inverseBindMatrices];
+        inverseBindMatrices.resize(accessor.count);
+
+        fastgltf::iterateAccessorWithIndex<glm::mat4>(asset, accessor, [&](glm::mat4 m, size_t idx) {
+            inverseBindMatrices[idx] = m;
+        });
+    }
+
+    for (size_t i = 0; i < skin.joints.size(); i++) {
+        size_t nodeIndex = skin.joints[i];
+        const auto& node = asset.nodes[nodeIndex];
+
+        Joint joint;
+        joint.Name = node.name.empty() ? ("Joint_" + std::to_string(nodeIndex)) : std::string(node.name);
+
+        auto it = nodeToEntity.find(nodeIndex);
+        joint.JointEntity = (it != nodeToEntity.end()) ? it->second : nullptr;
+        joint.InverseBindMatrix = (i < inverseBindMatrices.size()) ? inverseBindMatrices[i] : glm::mat4(1.0f);
+
+        skeleton.AddJoint(joint);
+    }
+
+    return skeleton;
 }
 
 void ModelLoader::generateTangents(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
@@ -215,13 +284,17 @@ void ModelLoader::createNodeEntity(
     size_t nodeIndex,
     Entity* parent, 
     const std::string& baseDir, 
-    Shader& shader
+    Shader& shader,
+    std::unordered_map<size_t, Entity*>& nodeToEntity,
+    std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
 ) {
     const auto& node = asset.nodes[nodeIndex];
     std::string name = node.name.empty() ? ("Node_" + std::to_string(nodeIndex)) : std::string(node.name);
 
     Entity& entity = world.CreateEntity(name, parent);
     applyNodeTransform(node, entity.GetTransform());
+
+    nodeToEntity[nodeIndex] = &entity;
 
     if (node.meshIndex.has_value()) {
         const auto& mesh = asset.meshes[*node.meshIndex];
@@ -232,6 +305,8 @@ void ModelLoader::createNodeEntity(
                 : world.CreateEntity(name + "_part" + std::to_string(i), &entity);
 
             attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader);
+
+            if (node.skinIndex.has_value()) skinnedMeshEntities[nodeIndex].push_back(&target);
         }
     }
 
@@ -242,7 +317,9 @@ void ModelLoader::createNodeEntity(
             childIndex, 
             &entity, 
             baseDir, 
-            shader
+            shader,
+            nodeToEntity,
+            skinnedMeshEntities
         );
     }
 }

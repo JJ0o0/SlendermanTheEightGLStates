@@ -1,4 +1,5 @@
 #include <graphics/game_renderer.hpp>
+#include <graphics/skeleton.hpp>
 #include <graphics/shapes/cube.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
@@ -35,6 +36,8 @@ void GameRenderer::draw(const World& world) {
 void GameRenderer::drawScene(const World& world, Shader& shader) {
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
+
+        if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices());
 
         entity->GetMaterial()->Bind();
             shader.SetMat4("uModel", entity->GetWorldModel());
