@@ -21,6 +21,9 @@ void Game::Initialize() {
 
                 if (!m_window.IsMouseLocked()) m_player.GetCamera().ResetMouseMovement();
                 break;
+            case GLFW_KEY_F:
+                if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
+                break;
         }
     };
 
