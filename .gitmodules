@@ -5,3 +5,6 @@
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "external/inih"]
+	path = external/inih
+	url = https://github.com/benhoyt/inih.git

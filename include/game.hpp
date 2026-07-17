@@ -37,6 +37,7 @@ class Game {
         DebugUI& m_debugUI;
 
         bool m_showDebug = false;
+        bool m_timeStop = false;
 
         std::unique_ptr<Shader> m_defaultShader;
         std::unique_ptr<Shader> m_shadowShader;

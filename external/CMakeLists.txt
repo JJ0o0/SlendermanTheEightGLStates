@@ -1,5 +1,6 @@
 add_subdirectory(fastgltf)
 
+# IMGUI
 add_library(imgui
     imgui/imgui.cpp
     imgui/imgui_draw.cpp
@@ -21,4 +22,16 @@ target_include_directories(imgui PUBLIC
 target_link_libraries(imgui
     PUBLIC
         glfw
+)
+
+# INIH
+
+add_library(inih
+    inih/ini.c
+    inih/cpp/INIReader.cpp
+)
+
+target_include_directories(inih PUBLIC
+    inih
+    inih/cpp
 )

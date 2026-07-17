@@ -1,12 +1,15 @@
 #include <application.hpp>
-#include <game.hpp>
 #include <platform/system_info.hpp>
+#include <platform/config_file.hpp>
+#include <game.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
 
 int Application::Run() {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    ConfigFile::Load("config.ini");
 
     m_window = std::make_unique<Window>();
     if (!m_window->Initialize()) return -1;

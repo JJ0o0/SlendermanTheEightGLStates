@@ -1,8 +1,9 @@
 #include <game.hpp>
+#include <platform/config_file.hpp>
+#include <graphics/model_loader.hpp>
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <graphics/model_loader.hpp>
 #include <iostream>
 
 void Game::Initialize() {
@@ -14,13 +15,22 @@ void Game::Initialize() {
         if (m_window.IsMouseLocked()) m_player.GetCamera().HandleMouseMovement(xpos, ypos);
     };
 
-    m_window.OnKeyPress = [&](int key) {
+    auto debugEnabled = ConfigFile::GetBool("Debug", "DebugTools", false);
+    m_window.OnKeyPress = [&, debugEnabled](int key) {
         switch (key) {
             case GLFW_KEY_ESCAPE:
                 m_window.ToggleLockMouse();
 
                 if (!m_window.IsMouseLocked()) m_player.GetCamera().ResetMouseMovement();
                 break;
+            case GLFW_KEY_F:
+                if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
+                break;
+        }
+
+        if (!debugEnabled) return;
+
+        switch (key) {
             case GLFW_KEY_F12:
                 m_showDebug = !m_showDebug;
                 break;
@@ -33,11 +43,11 @@ void Game::Initialize() {
             case GLFW_KEY_F3:
                 if (m_renderer) m_renderer->ToggleShowColliders();
                 break;
+            case GLFW_KEY_F8:
+                m_timeStop = !m_timeStop;
+                break;
             case GLFW_KEY_N:
                 m_player.ToggleNoclip();
-                break;
-            case GLFW_KEY_F:
-                if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
                 break;
         }
     };
@@ -57,7 +67,8 @@ void Game::Initialize() {
 void Game::Update(float deltatime) {
     m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
-    m_animator.Update(deltatime);
+
+    if (!m_timeStop) m_animator.Update(deltatime);
 }
 
 void Game::Render() {
@@ -83,6 +94,7 @@ void Game::RenderDebugUI() {
 
     if (ImGui::BeginTabBar("DebugTabs")) {
         if (ImGui::BeginTabItem("Engine")) { 
+            ImGui::Text("%s", m_timeStop ? "Time Stopped" : "Time Running");
             ImGui::Text("VSync: %s", m_window.GetProperties().VSync ? "On" : "Off");
             ImGui::Text("Lit: %s", !m_renderer->IsUnlit() ? "On" : "Off");
             ImGui::Text("Wireframe: %s", m_renderer->IsWireframe() ? "On" : "Off");

@@ -42,6 +42,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/platform/window.cpp"
     "src/platform/error_handling.cpp"
     "src/platform/system_info.cpp"
+    "src/platform/config_file.cpp"
 
     "src/playable/camera.cpp"
     "src/playable/flashlight.cpp"
@@ -82,4 +83,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         glm::glm
         fastgltf::fastgltf
         imgui
+        inih
 )
