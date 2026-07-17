@@ -54,6 +54,8 @@ class ModelLoader {
             std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
         );
 
+        static AABB computeMeshLocalAABB(const fastgltf::Asset& asset, const fastgltf::Mesh& mesh);
+
         static std::shared_ptr<Texture> loadTexture(
             const fastgltf::Asset& asset,
             size_t textureIndex,

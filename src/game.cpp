@@ -21,6 +21,9 @@ void Game::Initialize() {
 
                 if (!m_window.IsMouseLocked()) m_player.GetCamera().ResetMouseMovement();
                 break;
+            case GLFW_KEY_F12:
+                m_showDebug = !m_showDebug;
+                break;
             case GLFW_KEY_F1:
                 if (m_renderer) m_renderer->ToggleWireframe();
                 break;
@@ -28,7 +31,7 @@ void Game::Initialize() {
                 if (m_renderer) m_renderer->ToggleUnlit();
                 break;
             case GLFW_KEY_F3:
-                m_showDebug = !m_showDebug;
+                if (m_renderer) m_renderer->ToggleShowColliders();
                 break;
             case GLFW_KEY_F:
                 if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
@@ -49,8 +52,6 @@ void Game::Initialize() {
 }
 
 void Game::Update(float deltatime) {
-    calculateFPS(deltatime);
-
     m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
     m_animator.Update(deltatime);
@@ -82,6 +83,7 @@ void Game::RenderDebugUI() {
             ImGui::Text("VSync: %s", m_window.GetProperties().VSync ? "On" : "Off");
             ImGui::Text("Lit: %s", !m_renderer->IsUnlit()? "On" : "Off");
             ImGui::Text("Wireframe: %s", m_renderer->IsWireframe()? "On" : "Off");
+            ImGui::Text("Show Colliders: %s", m_renderer->IsShowColliders()? "On" : "Off");
 
             ImGui::EndTabItem();
         }
@@ -174,7 +176,8 @@ void Game::loadResources() {
     model.GetTransform().Scale = glm::vec3(5.0f);
     model.SnapToGround(m_world);
     model.GetTransform().Position.y += 0.1f;
-    
+    model.GetTransform().Position.z = 1.5f;
+
     if (!m_animations.empty()) m_animator.Play(m_animations[0]);
 
     // CUBEMAPS
@@ -193,15 +196,4 @@ void Game::loadResources() {
     m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
     m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
-}
-
-void Game::calculateFPS(float deltatime) {
-    m_frameCount++;
-    m_fpsTimer += deltatime;
-
-    if (m_fpsTimer >= 0.5f) {
-        m_fps = m_frameCount / m_fpsTimer;
-        m_frameCount = 0;
-        m_fpsTimer = 0.0f;
-    }
 }

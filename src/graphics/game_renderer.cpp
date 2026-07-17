@@ -5,6 +5,12 @@
 
 GameRenderer::GameRenderer(Shader& shader)
     : m_shader(shader) {
+    m_debugLineShader = std::make_unique<Shader>(
+        "assets/shaders/debug.vert",
+        "assets/shaders/debug.frag"
+    );
+
+    m_debugCubeMesh = std::make_unique<Mesh>(CreateCube());
 }
 
 void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
@@ -29,6 +35,8 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
     m_shader.Unbind();
 
     if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    drawColliders(world, player);
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {
@@ -50,6 +58,32 @@ void GameRenderer::drawScene(const World& world, Shader& shader) {
             entity->GetMesh()->Draw();
         entity->GetMaterial()->Unbind();
     }
+}
+
+void GameRenderer::drawColliders(const World& world, Player& player) {
+    if (!m_showColliders) return;
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    m_debugLineShader->Bind();
+    m_debugLineShader->SetVec3("uColor", glm::vec3(0.0f, 1.0f, 0.0f));
+    m_debugLineShader->SetMat4("uView", player.GetCamera().GetViewMatrix(player.GetEyePosition()));
+    m_debugLineShader->SetMat4("uProjection", player.GetCamera().GetProjectionMatrix());
+
+    for (const auto& entity : world.GetEntities()) {
+        if (!entity->HasCollider()) continue;
+
+        AABB box = entity->GetColliderAABB();
+        glm::vec3 center = (box.Minimum + box.Maximum) * 0.5f;
+        glm::vec3 size = box.Maximum - box.Minimum;
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), center) * glm::scale(glm::mat4(1.0f), size);
+        m_debugLineShader->SetMat4("uModel", model);
+
+        m_debugCubeMesh->Draw();
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void GameRenderer::setCameraUniforms(Player& player) {

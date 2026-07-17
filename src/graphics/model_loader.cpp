@@ -359,6 +359,23 @@ void ModelLoader::createNodeEntity(
     const auto& node = asset.nodes[nodeIndex];
     std::string name = node.name.empty() ? ("Node_" + std::to_string(nodeIndex)) : std::string(node.name);
 
+    const std::string suffix = "_Collision";
+    bool isCollisionNode = name.size() > suffix.size() && 
+        name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
+
+    if (isCollisionNode && parent && node.meshIndex.has_value()) {
+        AABB localBounds = computeMeshLocalAABB(asset, asset.meshes[*node.meshIndex]);
+
+        bool isValid = localBounds.Minimum.x <= localBounds.Maximum.x &&
+                        localBounds.Minimum.y <= localBounds.Maximum.y &&
+                        localBounds.Minimum.z <= localBounds.Maximum.z;
+
+        if (isValid) parent->SetCollider(Collider(localBounds.Maximum - localBounds.Minimum));
+        else std::cerr << "Warning: '" << name << "' collision node has no valid geometry, skipping collider.\n";
+
+        return;
+    }
+
     Entity& entity = world.CreateEntity(name, parent);
     applyNodeTransform(node, entity.GetTransform());
 
@@ -390,6 +407,25 @@ void ModelLoader::createNodeEntity(
             skinnedMeshEntities
         );
     }
+}
+
+AABB ModelLoader::computeMeshLocalAABB(const fastgltf::Asset& asset, const fastgltf::Mesh& mesh) {
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+    glm::vec3 maxBounds(std::numeric_limits<float>::lowest());
+
+    for (const auto& primitive : mesh.primitives) {
+        auto posIt = primitive.findAttribute("POSITION");
+        if (posIt == primitive.attributes.end()) continue;
+
+        const auto& positionAccessor = asset.accessors[posIt->accessorIndex];
+
+        fastgltf::iterateAccessor<glm::vec3>(asset, positionAccessor, [&](glm::vec3 pos) {
+            minBounds = glm::min(minBounds, pos);
+            maxBounds = glm::max(maxBounds, pos);
+        });
+    }
+
+    return { minBounds, maxBounds };
 }
 
 std::shared_ptr<Texture> ModelLoader::loadTexture(

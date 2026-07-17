@@ -36,10 +36,6 @@ class Game {
         Window& m_window;
         DebugUI& m_debugUI;
 
-        float m_fps = 0.0f;
-        float m_fpsTimer = 0.0f;
-        int m_frameCount = 0;
-
         bool m_showDebug = false;
 
         std::unique_ptr<Shader> m_defaultShader;
@@ -59,6 +55,4 @@ class Game {
         Player m_player{};
 
         void loadResources();
-        void calculateFPS(float deltatime);
-        int getAproximateFPS() { return std::round(m_fps); }
 };
