@@ -1,25 +1,25 @@
 #include <playable/player.hpp>
 
 void Player::Update(float deltatime, const World& world) {
-    m_velocity.y -= m_properties.Gravity * deltatime;
+    if (!m_noclip) m_velocity.y -= m_properties.Gravity * deltatime;
 
     glm::vec3 movement = m_velocity * deltatime;
 
     m_position.x += movement.x;
 
-    if (world.CheckCollision(GetCollision())) {
+    if (!m_noclip && world.CheckCollision(GetCollision())) {
         m_position.x -= movement.x;
         m_velocity.x = 0.0f;
     }
 
     m_position.z += movement.z;
-    if (world.CheckCollision(GetCollision())) {
+    if (!m_noclip && world.CheckCollision(GetCollision())) {
         m_position.z -= movement.z;
         m_velocity.z = 0.0f;
     }
 
     m_position.y += movement.y;
-    if (world.CheckCollision(GetCollision())) {
+    if (!m_noclip && world.CheckCollision(GetCollision())) {
         m_position.y -= movement.y;
         m_velocity.y = 0.0f;
     }
@@ -34,12 +34,12 @@ void Player::Update(float deltatime, const World& world) {
         default: intensity = 0.0f; break;
     }
 
-    m_camera.UpdateBob(deltatime, intensity, m_state == MovementState::Sprinting);
+    if (!m_noclip) m_camera.UpdateBob(deltatime, intensity, m_state == MovementState::Sprinting);
 }
 
 void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
     glm::vec3 forward = m_camera.GetFront();
-    forward.y = 0.0f;
+    if (!m_noclip) forward.y = 0.0f;
     forward = glm::normalize(forward);
 
     glm::vec3 right = m_camera.GetRight();
@@ -52,6 +52,11 @@ void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
     if (glfwGetKey(glfwWindow, GLFW_KEY_S) == GLFW_PRESS) direction -= forward;
     if (glfwGetKey(glfwWindow, GLFW_KEY_D) == GLFW_PRESS) direction += right;
     if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS) direction -= right;
+
+    if (m_noclip) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS) direction += m_camera.GetUp();
+        if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) direction -= m_camera.GetUp();
+    }
 
     bool isMoving = glm::length(direction) > 0.0f;
     if (isMoving) direction = glm::normalize(direction);
@@ -88,6 +93,7 @@ void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
 
     m_velocity.x = direction.x * speed;
     m_velocity.z = direction.z * speed;
+    if (m_noclip) m_velocity.y = direction.y * speed;
 }
 
 AABB Player::GetCollision() const {

@@ -360,8 +360,10 @@ void ModelLoader::createNodeEntity(
     std::string name = node.name.empty() ? ("Node_" + std::to_string(nodeIndex)) : std::string(node.name);
 
     const std::string suffix = "_Collision";
-    bool isCollisionNode = name.size() > suffix.size() && 
-        name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
+    bool isCollisionNode = name.size() >= suffix.size() && name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
+    
+    // DEBUG PRA VER SE O NODE É DE COLISÃO
+    // std::cout << "Node: '" << name << "' -> isCollisionNode = " << isCollisionNode << "\n";
 
     if (isCollisionNode && parent && node.meshIndex.has_value()) {
         AABB localBounds = computeMeshLocalAABB(asset, asset.meshes[*node.meshIndex]);

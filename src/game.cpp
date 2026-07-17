@@ -33,6 +33,9 @@ void Game::Initialize() {
             case GLFW_KEY_F3:
                 if (m_renderer) m_renderer->ToggleShowColliders();
                 break;
+            case GLFW_KEY_N:
+                m_player.ToggleNoclip();
+                break;
             case GLFW_KEY_F:
                 if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
                 break;
@@ -81,9 +84,10 @@ void Game::RenderDebugUI() {
     if (ImGui::BeginTabBar("DebugTabs")) {
         if (ImGui::BeginTabItem("Engine")) { 
             ImGui::Text("VSync: %s", m_window.GetProperties().VSync ? "On" : "Off");
-            ImGui::Text("Lit: %s", !m_renderer->IsUnlit()? "On" : "Off");
-            ImGui::Text("Wireframe: %s", m_renderer->IsWireframe()? "On" : "Off");
-            ImGui::Text("Show Colliders: %s", m_renderer->IsShowColliders()? "On" : "Off");
+            ImGui::Text("Lit: %s", !m_renderer->IsUnlit() ? "On" : "Off");
+            ImGui::Text("Wireframe: %s", m_renderer->IsWireframe() ? "On" : "Off");
+            ImGui::Text("Show Colliders: %s", m_renderer->IsShowColliders() ? "On" : "Off");
+            ImGui::Text("No Clip: %s", m_player.IsNoclip() ? "On" : "Off");
 
             ImGui::EndTabItem();
         }
@@ -173,10 +177,10 @@ void Game::loadResources() {
 
     auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/spongebob_dancing_18.glb", *m_defaultShader, nullptr, &m_animations);
     //model.GetTransform().RotateEuler({45.0f, 0.0f, 0.0f});
-    model.GetTransform().Scale = glm::vec3(5.0f);
+    model.GetTransform().Scale *= 10.0f;
+    model.GetTransform().Position.z = 1.5f;
     model.SnapToGround(m_world);
     model.GetTransform().Position.y += 0.1f;
-    model.GetTransform().Position.z = 1.5f;
 
     if (!m_animations.empty()) m_animator.Play(m_animations[0]);
 

@@ -44,6 +44,10 @@ class Player {
         const glm::vec3& GetPosition() const { return m_position; }
         const glm::vec3& GetEyePosition() const { return m_eyePosition; }
         const glm::vec3& GetVelocity() const { return m_velocity; }
+        
+        void ToggleNoclip() { m_noclip = !m_noclip; }
+        void SetNoclip(bool enabled) { m_noclip = enabled; }
+        bool IsNoclip() const { return m_noclip; }
 
         MovementState GetMovementState() const { return m_state; }
         const std::string MovementStateToString(MovementState state);
@@ -63,6 +67,7 @@ class Player {
         
         bool m_onGround = false;
         bool m_isExhausted = false;
+        bool m_noclip = false;
 
         float m_stamina;
         
