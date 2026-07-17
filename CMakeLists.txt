@@ -13,7 +13,7 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
-add_subdirectory(external/fastgltf)
+add_subdirectory(external)
 
 add_executable(${CMAKE_PROJECT_NAME}
     "src/main.cpp"
@@ -33,6 +33,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/skybox_mesh.cpp"
     "src/graphics/skybox_renderer.cpp"
     "src/graphics/game_renderer.cpp"
+    "src/graphics/ui/debug_ui.cpp"
     "src/graphics/animation/animation_clip.cpp"
     "src/graphics/animation/animator.cpp"
     "src/graphics/materials/basic_material.cpp"
@@ -40,6 +41,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 
     "src/platform/window.cpp"
     "src/platform/error_handling.cpp"
+    "src/platform/system_info.cpp"
 
     "src/playable/camera.cpp"
     "src/playable/flashlight.cpp"
@@ -79,4 +81,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         glfw
         glm::glm
         fastgltf::fastgltf
+        imgui
 )

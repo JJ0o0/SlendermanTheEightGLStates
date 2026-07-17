@@ -8,7 +8,11 @@ GameRenderer::GameRenderer(Shader& shader)
 }
 
 void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
+    if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
     m_shader.Bind();
+        m_shader.SetBool("uUnlit", m_unlit);
+
         setCameraUniforms(player);
         setLightUniforms(flashlight);
 
@@ -23,6 +27,8 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
             draw(world);
         flashlight.Unbind();
     m_shader.Unbind();
+
+    if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {

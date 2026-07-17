@@ -4,6 +4,8 @@
 #include <graphics/skybox_renderer.hpp>
 #include <graphics/shadow_renderer.hpp>
 
+#include <graphics/ui/debug_ui.hpp>
+
 #include <graphics/materials/pbr_material.hpp>
 
 #include <graphics/mesh.hpp>
@@ -18,18 +20,27 @@
 #include <playable/player.hpp>
 
 #include <world.hpp>
+#include <imgui.h>
 
 #include <memory>
 
 class Game {
     public:
-        Game(Window& window) : m_window(window) {}
+        Game(Window& window, DebugUI& debugUI) : m_window(window), m_debugUI(debugUI) {}
 
         void Initialize();
         void Update(float deltatime);
         void Render();
+        void RenderDebugUI();
     private:
         Window& m_window;
+        DebugUI& m_debugUI;
+
+        float m_fps = 0.0f;
+        float m_fpsTimer = 0.0f;
+        int m_frameCount = 0;
+
+        bool m_showDebug = false;
 
         std::unique_ptr<Shader> m_defaultShader;
         std::unique_ptr<Shader> m_shadowShader;
@@ -48,4 +59,6 @@ class Game {
         Player m_player{};
 
         void loadResources();
+        void calculateFPS(float deltatime);
+        int getAproximateFPS() { return std::round(m_fps); }
 };

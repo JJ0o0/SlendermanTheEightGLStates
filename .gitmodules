@@ -1,3 +1,7 @@
 [submodule "external/fastgltf"]
 	path = external/fastgltf
 	url = https://github.com/spnda/fastgltf.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

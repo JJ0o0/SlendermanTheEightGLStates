@@ -1,5 +1,7 @@
 #include <application.hpp>
 #include <game.hpp>
+#include <platform/system_info.hpp>
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 
@@ -9,7 +11,12 @@ int Application::Run() {
     m_window = std::make_unique<Window>();
     if (!m_window->Initialize()) return -1;
 
-    Game game(*m_window);
+    SystemInfo::Initialize();
+
+    m_debugUI = std::make_unique<DebugUI>();
+    m_debugUI->Initialize(m_window->GetHandle());
+
+    Game game(*m_window, *m_debugUI);
     game.Initialize();
 
     float lastTime = glfwGetTime();
@@ -21,15 +28,19 @@ int Application::Run() {
         deltaTime = std::min(deltaTime, 0.05f);
 
         m_window->PollEvents();
-        game.Update(deltaTime);
+        m_debugUI->BeginFrame(deltaTime);
+            game.Update(deltaTime);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.1f, 0.1f, 0.13f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClearColor(0.1f, 0.1f, 0.13f, 1.0f);
 
-        game.Render();
+            game.RenderDebugUI();
+            game.Render();
+        m_debugUI->EndFrame();
         m_window->SwapBuffers();
     }
 
+    m_debugUI->Terminate();
     m_window->Destroy();
     return 0;
 }

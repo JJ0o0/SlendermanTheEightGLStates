@@ -21,6 +21,15 @@ void Game::Initialize() {
 
                 if (!m_window.IsMouseLocked()) m_player.GetCamera().ResetMouseMovement();
                 break;
+            case GLFW_KEY_F1:
+                if (m_renderer) m_renderer->ToggleWireframe();
+                break;
+            case GLFW_KEY_F2:
+                if (m_renderer) m_renderer->ToggleUnlit();
+                break;
+            case GLFW_KEY_F3:
+                m_showDebug = !m_showDebug;
+                break;
             case GLFW_KEY_F:
                 if (m_player.GetFlashlight().GetBatteryLevel() > 0) m_player.GetFlashlight().Toggle();
                 break;
@@ -40,6 +49,8 @@ void Game::Initialize() {
 }
 
 void Game::Update(float deltatime) {
+    calculateFPS(deltatime);
+
     m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
     m_animator.Update(deltatime);
@@ -48,10 +59,70 @@ void Game::Update(float deltatime) {
 void Game::Render() {
     m_shadowRenderer->Render(m_world, *m_renderer, m_player.GetFlashlight());
 
+    // Atualizar viewport porque o shadow renderer mexeu
     glViewport(0,0,m_window.GetProperties().Width, m_window.GetProperties().Height);
 
     m_skyboxRenderer->Render(m_player);
     m_renderer->Render(m_world, m_player, m_player.GetFlashlight(), m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap());
+}
+
+void Game::RenderDebugUI() {
+    if (!m_showDebug) return;
+
+    ImGui::SetNextWindowPos({15, 15});
+    ImGui::SetNextWindowSize({300, 320});
+    ImGui::Begin("Debug Statistics", nullptr,
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize
+    );
+
+    if (ImGui::BeginTabBar("DebugTabs")) {
+        if (ImGui::BeginTabItem("Engine")) { 
+            ImGui::Text("VSync: %s", m_window.GetProperties().VSync ? "On" : "Off");
+            ImGui::Text("Lit: %s", !m_renderer->IsUnlit()? "On" : "Off");
+            ImGui::Text("Wireframe: %s", m_renderer->IsWireframe()? "On" : "Off");
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Player")) {
+            ImGui::SeparatorText("Data");
+
+            auto playerPos = m_player.GetPosition();
+            ImGui::InputFloat3("Position", &playerPos.x, "%.2f", ImGuiInputTextFlags_ReadOnly);
+
+            auto playerVel = m_player.GetVelocity();
+            ImGui::InputFloat3("Velocity", &playerVel.x, "%.2f", ImGuiInputTextFlags_ReadOnly);
+
+            auto playerState = m_player.GetMovementState();
+            ImGui::Text("State: %s", m_player.MovementStateToString(playerState).c_str());
+
+            ImGui::SeparatorText("Flashlight");
+
+            auto& flashlight = m_player.GetFlashlight();
+
+            ImGui::Text("Enabled: %s", flashlight.GetProperties().Enabled ? "On" : "Off");
+
+            float batteryPercent = flashlight.GetBatteryLevel() / 100.0f;
+
+            char overlay[16];
+            snprintf(overlay, sizeof(overlay), "%.0f%%", batteryPercent * 100.0f);
+
+            ImGui::ProgressBar(batteryPercent, ImVec2(-1, 0), overlay);
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("System")) { 
+            m_debugUI.DrawSystemInfo(); 
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::End();
 }
 
 void Game::loadResources() {
@@ -122,4 +193,15 @@ void Game::loadResources() {
     m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
     m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
+}
+
+void Game::calculateFPS(float deltatime) {
+    m_frameCount++;
+    m_fpsTimer += deltatime;
+
+    if (m_fpsTimer >= 0.5f) {
+        m_fps = m_frameCount / m_fpsTimer;
+        m_frameCount = 0;
+        m_fpsTimer = 0.0f;
+    }
 }

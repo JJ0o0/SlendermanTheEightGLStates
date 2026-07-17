@@ -101,6 +101,15 @@ AABB Player::GetCollision() const {
     return {min,max};
 }
 
+const std::string Player::MovementStateToString(MovementState state) {
+    switch (state) {
+        case MovementState::Idle: return "Idle";
+        case MovementState::Walking: return "Walk";
+        case MovementState::Sprinting: return "Sprint";
+        default: return "Unknown";
+    }
+}
+
 void Player::updateCamera() { m_eyePosition = m_position + glm::vec3(0.0f, m_properties.EyeHeight, 0.0f); }
 
 void Player::updateFlashlight(float deltatime) {

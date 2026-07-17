@@ -44,7 +44,9 @@ class Player {
         const glm::vec3& GetPosition() const { return m_position; }
         const glm::vec3& GetEyePosition() const { return m_eyePosition; }
         const glm::vec3& GetVelocity() const { return m_velocity; }
+
         MovementState GetMovementState() const { return m_state; }
+        const std::string MovementStateToString(MovementState state);
 
         Camera& GetCamera() { return m_camera; }
         const Camera& GetCamera() const { return m_camera; }

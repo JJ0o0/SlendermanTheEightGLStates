@@ -29,6 +29,8 @@ struct Light {
     bool Enabled;
 };
 
+uniform bool uUnlit;
+
 uniform vec3 uCameraPosition;
 uniform Light uLight;
 
@@ -230,14 +232,18 @@ vec3 applyFog(vec3 color) {
 
 void main() {
     MaterialData material = getMaterial();
-    
-    vec3 ambient = calculateAmbient(material);
-    vec3 direct = calculateDirectLight(material, material.Normal);
 
-    vec3 color = ambient + direct;
-    color = applyFog(color);
-    color = tonemap(color);
-    color = gammaCorrection(color);
+    vec3 color;
+    if (uUnlit) { color = material.Albedo; }
+    else {
+        vec3 ambient = calculateAmbient(material);
+        vec3 direct = calculateDirectLight(material, material.Normal);
+
+        color = ambient + direct;
+        color = applyFog(color);
+        color = tonemap(color);
+    }
     
+    color = gammaCorrection(color);
     FragColor = vec4(color, 1.0);
 }

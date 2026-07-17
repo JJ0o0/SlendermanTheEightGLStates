@@ -13,9 +13,20 @@ class GameRenderer {
 
         void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(const World& world, Shader& shader);
+
+        void ToggleWireframe() { m_wireframe = !m_wireframe; }
+        void SetWireframe(bool wireframe) { m_wireframe = wireframe; }
+        bool IsWireframe() const { return m_wireframe; }
+
+        void ToggleUnlit() { m_unlit = !m_unlit; }
+        void SetUnlit(bool unlit) { m_unlit = unlit; }
+        bool IsUnlit() const { return m_unlit; }
     private:
         Shader& m_shader;
         
+        bool m_unlit = false;
+        bool m_wireframe = false;
+
         void draw(const World& world);
         void drawScene(const World& world, Shader& shader);
         void setCameraUniforms(Player& player);
