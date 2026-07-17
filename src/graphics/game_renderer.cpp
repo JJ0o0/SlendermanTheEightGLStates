@@ -56,7 +56,7 @@ void GameRenderer::setLightUniforms(Flashlight& flashlight) {
     // Flashlight
     const auto& properties = flashlight.GetProperties();
     m_shader.SetBool("uLight.Enabled", properties.Enabled);
-    m_shader.SetVec3("uLight.Radiance", properties.Radiance);
+    m_shader.SetVec3("uLight.Radiance", properties.Radiance * flashlight.GetIntensityMultiplier());
     m_shader.SetVec3("uLight.Position", flashlight.GetPosition());
     m_shader.SetFloat("uLight.InnerCutoff", std::cos(glm::radians(properties.InnerCutoff)));
     m_shader.SetFloat("uLight.OuterCutoff", std::cos(glm::radians(properties.OuterCutoff)));

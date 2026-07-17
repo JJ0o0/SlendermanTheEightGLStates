@@ -18,7 +18,23 @@ struct FlashlightProperties {
     float DrainRate = 2.0f;
     float LowBatteryThreshold = 0.2f;
 
-    glm::vec3 Radiance{18.0f, 17.5f, 16.5f};
+    float FlickerFrequencyMin = 4.0f;
+    float FlickerFrequencyMax = 25.0f;
+
+    float FlickerAmplitudeMin = 0.05f;
+    float FlickerAmplitudeMax = 0.6f;
+
+    float SpikeChanceMax = 1.5f;
+    float SpikeDuration = 0.08f;
+    float SpikeMinIntensity = 0.05f;
+
+    float BaseFlickerFrequency = 6.0f;
+    float BaseFlickerAmplitude = 0.03f;
+
+    float MinIntensityAtEmptyBattery = 0.3f;
+    float IntensitySmoothing = 15.0f;
+
+    glm::vec3 Radiance{9.0f, 8.5f, 8.0f};
 };
 
 class Flashlight {
@@ -41,6 +57,7 @@ class Flashlight {
         const glm::vec3 GetPosition() const { return m_position; }
         const glm::vec3 GetDirection() const { return m_direction; }
         float GetBatteryLevel() const { return m_battery; }
+        float GetIntensityMultiplier() const { return m_intensityMultiplier; }
 
         const FlashlightProperties& GetProperties() const { return m_properties; }
     private:
@@ -55,5 +72,11 @@ class Flashlight {
         glm::vec3 m_direction{0.0f};
 
         float m_time = 0.0f;
+        float m_spikeTime = 0.0f;
         float m_battery = m_properties.MaxBattery;
+        float m_intensityMultiplier = 1.0f;
+
+        float computeBaseDimming(float percentage) const;
+        float computeSubtleFlicker() const;
+        float computeLowBatteryFlicker(float percentage, float deltatime);
 };
