@@ -42,7 +42,7 @@ bool Entity::SnapToGround(const World& world, float maxDistance) {
     glm::vec3 rayOrigin = worldPosition;
     rayOrigin.y = bounds->Maximum.y + 0.1f;
 
-    auto hit = world.Raycast(rayOrigin, glm::vec3(0.0f, -1.0f, 0.0f), maxDistance);
+    auto hit = world.Raycast(rayOrigin, glm::vec3(0.0f, -1.0f, 0.0f), maxDistance, false, this);
     if (!hit.has_value()) return false;
 
     m_transform.Position.y = hit->Point.y + offset;

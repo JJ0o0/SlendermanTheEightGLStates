@@ -12,7 +12,8 @@
 Entity& ModelLoader::LoadModelIntoWorld(
     World& world, 
     const std::string& path,
-    Shader& shader, 
+    Shader& shader,
+    bool skipMaterials, 
     Entity* parent,
     std::vector<AnimationClip>* outAnimations
 ) {
@@ -50,6 +51,7 @@ Entity& ModelLoader::LoadModelIntoWorld(
             baseDir,
             path,
             shader,
+            skipMaterials,
             nodeToEntity,
             skinnedMeshEntities
         );
@@ -79,7 +81,8 @@ void ModelLoader::attachMeshAndMaterial(
     const fastgltf::Primitive& primitive, 
     const std::string& baseDir, 
     Shader& shader,
-    const std::string& meshCacheKey
+    const std::string& meshCacheKey,
+    bool skipMaterials
 ) {
     auto cachedMesh = AssetManager<Mesh>::TryGet(meshCacheKey);
     if (cachedMesh) {
@@ -132,6 +135,15 @@ void ModelLoader::attachMeshAndMaterial(
             });
         }
 
+        // Vertex Color
+        auto colorIt = primitive.findAttribute("COLOR_0");
+        if (colorIt != primitive.attributes.end()) {
+            const auto& accessor = asset.accessors[colorIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor, [&](glm::vec4 c, size_t idx) {
+                vertices[idx].Color = c;
+            });
+        }
+
         // Vertex Joints
         auto jointsIt = primitive.findAttribute("JOINTS_0");
         if (jointsIt != primitive.attributes.end()) {
@@ -168,7 +180,7 @@ void ModelLoader::attachMeshAndMaterial(
     }
 
     // Materials
-    if (primitive.materialIndex.has_value()) {
+    if (!skipMaterials && primitive.materialIndex.has_value()) {
         const auto& material = asset.materials[*primitive.materialIndex];
         auto pbrMaterial = std::make_shared<PBRMaterial>(shader);
 
@@ -365,6 +377,7 @@ void ModelLoader::createNodeEntity(
     const std::string& baseDir,
     const std::string& path,
     Shader& shader,
+    bool skipMaterials,
     std::unordered_map<size_t, Entity*>& nodeToEntity,
     std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
 ) {
@@ -404,7 +417,7 @@ void ModelLoader::createNodeEntity(
                 : world.CreateEntity(name + "_part" + std::to_string(i), &entity);
 
             std::string meshCacheKey = path + "#mesh" + std::to_string(*node.meshIndex) + "#prim" + std::to_string(i);
-            attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader, meshCacheKey);
+            attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader, meshCacheKey, skipMaterials);
 
             if (node.skinIndex.has_value()) skinnedMeshEntities[nodeIndex].push_back(&target);
         }
@@ -419,6 +432,7 @@ void ModelLoader::createNodeEntity(
             baseDir,
             path, 
             shader,
+            skipMaterials,
             nodeToEntity,
             skinnedMeshEntities
         );

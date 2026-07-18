@@ -45,6 +45,8 @@ class Player {
         const glm::vec3& GetEyePosition() const { return m_eyePosition; }
         const glm::vec3& GetVelocity() const { return m_velocity; }
         
+        float GetStamina() const { return m_stamina; }
+
         void ToggleNoclip() { m_noclip = !m_noclip; }
         void SetNoclip(bool enabled) { m_noclip = enabled; }
         bool IsNoclip() const { return m_noclip; }
@@ -57,6 +59,8 @@ class Player {
 
         Flashlight& GetFlashlight() { return m_flashlight; }
         const Flashlight& GetFlashlight() const { return m_flashlight; }
+
+        const PlayerProperties& GetProperties() const { return m_properties; }
     private:
         PlayerProperties m_properties;
         MovementState m_state = MovementState::Idle;

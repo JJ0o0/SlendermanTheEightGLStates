@@ -90,14 +90,15 @@ MaterialData getMaterial() {
 
     vec2 tiledUV = WorldPos.xz * uTextureTiling;
     float blend = VertexColor.r;
+    blend = smoothstep(0.35, 0.65, blend);
 
     vec3 grassAlbedo = texture(uGrassAlbedoMap, tiledUV).rgb;
     vec3 dirtAlbedo = texture(uDirtAlbedoMap, tiledUV).rgb;
-    data.Albedo = mix(dirtAlbedo, grassAlbedo, blend);
+    data.Albedo = mix(grassAlbedo, dirtAlbedo, blend);
 
     vec3 grassArm = texture(uGrassARMMap, tiledUV).rgb;
     vec3 dirtArm = texture(uDirtARMMap, tiledUV).rgb;
-    vec3 arm = mix(dirtArm, grassArm, blend);
+    vec3 arm = mix(grassArm, dirtArm, blend);
 
     data.AO = arm.r;
     data.Roughness = arm.g;
@@ -105,7 +106,7 @@ MaterialData getMaterial() {
 
     vec3 grassNormal = texture(uGrassNormalMap, tiledUV).rgb;
     vec3 dirtNormal = texture(uDirtNormalMap, tiledUV).rgb;
-    vec3 tangentNormal = mix(dirtNormal, grassNormal, blend);
+    vec3 tangentNormal = mix(grassNormal, dirtNormal, blend);
     tangentNormal = tangentNormal * 2.0 - 1.0;
     data.Normal = normalize(TBN * tangentNormal);
 

@@ -20,10 +20,12 @@ bool World::CheckCollision(const AABB& collider) const {
     return false;
 }
 
-std::optional<RaycastHit> World::Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, bool testWorldBounds) const {
+std::optional<RaycastHit> World::Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, bool testWorldBounds, const Entity* ignore) const {
     std::optional<RaycastHit> closest;
 
     for (const auto& entity : m_entities) {
+        if (entity.get() == ignore) continue;
+
         std::optional<AABB> bounds;
 
         if (testWorldBounds) { if (entity->HasMesh()) { bounds = GetWorldBounds(*entity); } }

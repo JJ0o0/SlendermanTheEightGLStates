@@ -68,20 +68,24 @@ void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
     else if (isMoving) m_state = MovementState::Walking;
     else m_state = MovementState::Idle;
 
-    if (m_state == MovementState::Sprinting) {
-        m_stamina -= m_properties.StaminaDrainRate * deltatime;
+    if (!m_noclip) {
+        if (m_state == MovementState::Sprinting) {
+            m_stamina -= m_properties.StaminaDrainRate * deltatime;
 
-        if (m_stamina <= 0.0f) {
-            m_stamina = 0.0f;
-            m_isExhausted = true;
+            if (m_stamina <= 0.0f) {
+                m_stamina = 0.0f;
+                m_isExhausted = true;
+            }
+        } else {
+            m_stamina += m_properties.StaminaRegenRate * deltatime;
+            m_stamina = glm::min(m_stamina, m_properties.MaxStamina);
+
+            if (m_isExhausted && m_stamina >= m_properties.MaxStamina * m_properties.ExhaustedThreshold) {
+                m_isExhausted = false;
+            }
         }
     } else {
-        m_stamina += m_properties.StaminaRegenRate * deltatime;
-        m_stamina = glm::min(m_stamina, m_properties.MaxStamina);
-
-        if (m_isExhausted && m_stamina >= m_properties.MaxStamina * m_properties.ExhaustedThreshold) {
-            m_isExhausted = false;
-        }
+        m_stamina = m_properties.MaxStamina;
     }
 
     float speed;

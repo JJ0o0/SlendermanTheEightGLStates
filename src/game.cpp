@@ -120,6 +120,13 @@ void Game::RenderDebugUI() {
             auto playerState = m_player.GetMovementState();
             ImGui::Text("State: %s", m_player.MovementStateToString(playerState).c_str());
 
+            float staminaPercent = m_player.GetStamina() / m_player.GetProperties().MaxStamina;
+            char staminaOverlay[16];
+            snprintf(staminaOverlay, sizeof(staminaOverlay), "%.0f%%", staminaPercent * 100.0f);
+
+            ImGui::Text("Stamina:");
+            ImGui::ProgressBar(staminaPercent, ImVec2(-1, 0), staminaOverlay);
+
             ImGui::SeparatorText("Flashlight");
 
             auto& flashlight = m_player.GetFlashlight();
@@ -128,10 +135,10 @@ void Game::RenderDebugUI() {
 
             float batteryPercent = flashlight.GetBatteryLevel() / 100.0f;
 
-            char overlay[16];
-            snprintf(overlay, sizeof(overlay), "%.0f%%", batteryPercent * 100.0f);
+            char batteryOverlay[16];
+            snprintf(batteryOverlay, sizeof(batteryOverlay), "%.0f%%", batteryPercent * 100.0f);
 
-            ImGui::ProgressBar(batteryPercent, ImVec2(-1, 0), overlay);
+            ImGui::ProgressBar(batteryPercent, ImVec2(-1, 0), batteryOverlay);
 
             ImGui::EndTabItem();
         }
@@ -165,12 +172,7 @@ void Game::loadResources() {
     );
 
     // ENTITIES
-    auto cube = AssetManager<Mesh>::GetOrLoad("shapes/cube", [&]() {
-        return std::make_shared<Mesh>(CreateCube());
-    });
-
-    auto& floor = m_world.CreateEntity("Floor");
-    floor.SetMesh(cube);
+    auto& floor = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/MapFloor/map.gltf", *m_terrainShader, true);
 
     auto grassAlbedo = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_albedo.jpg#srgb", [&]() {
         return std::make_shared<Texture>(TextureProperties{
@@ -198,24 +200,27 @@ void Game::loadResources() {
     };
 
     auto terrainMaterial = std::make_shared<TerrainMaterial>(*m_terrainShader);
+    
     terrainMaterial->SetTextures(TerrainTextureSet{
         grassTextureSet
     });
 
-    floor.SetMaterial(terrainMaterial);
+    floor.ForEachDescendant([&, terrainMaterial](Entity& e) {
+        std::cout << "Aplicando material em " << e.GetName() << "\n";
+        e.SetMaterial(terrainMaterial);
+    });
 
     auto& floorTransform = floor.GetTransform();
     floorTransform.Position.y = -1.0f;
-    floorTransform.Scale = {50.0f, 0.1f, 50.0f};
 
-    floor.SetCollider(Collider(floorTransform.Scale));
+    floor.SetCollider(Collider({320.0f, 0.1f, 190.0f}));
 
     auto& tree01 = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/Tree01/Tree01.gltf", *m_defaultShader);
     
     auto& tree01Transform = tree01.GetTransform();
     tree01.SnapToGround(m_world);
 
-    tree01.ForEachDescendant([](Entity& e) {
+    tree01.ForEachDescendant([&](Entity& e) {
         if (e.GetName() == "Tree_Branches_02") {
             if (auto pbr = e.GetMaterialAs<PBRMaterial>()) {
                 pbr->SetDoubleSided(true);

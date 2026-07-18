@@ -16,7 +16,8 @@ class ModelLoader {
         static Entity& LoadModelIntoWorld(
             World& world, 
             const std::string& path, 
-            Shader& shader, 
+            Shader& shader,
+            bool skipMaterials = false,
             Entity* parent = nullptr,
             std::vector<AnimationClip>* outAnimations = nullptr
         );
@@ -27,7 +28,8 @@ class ModelLoader {
             const fastgltf::Primitive& primitive, 
             const std::string& baseDir, 
             Shader& shader,
-            const std::string& meshCacheKey
+            const std::string& meshCacheKey,
+            bool skipMaterials
         );
 
         static Skeleton parseSkin(
@@ -53,6 +55,7 @@ class ModelLoader {
             const std::string& baseDir,
             const std::string& path,
             Shader& shader,
+            bool skipMaterials,
             std::unordered_map<size_t, Entity*>& nodeToEntity,
             std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
         );
