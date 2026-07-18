@@ -3,8 +3,7 @@
 #include <graphics/shapes/cube.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-GameRenderer::GameRenderer(Shader& shader)
-    : m_shader(shader) {
+GameRenderer::GameRenderer() {
     m_debugLineShader = std::make_unique<Shader>(
         "assets/shaders/debug.vert",
         "assets/shaders/debug.frag"
@@ -16,23 +15,15 @@ GameRenderer::GameRenderer(Shader& shader)
 void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
     if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
-    m_shader.Bind();
-        m_shader.SetBool("uUnlit", m_unlit);
-
-        setCameraUniforms(player);
-        setLightUniforms(flashlight);
-
-        m_shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
-        
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, shadowMap);
-
-        m_shader.SetInt("uShadowMap", 4);
-
-        flashlight.Bind(3);
-            draw(world);
-        flashlight.Unbind();
-    m_shader.Unbind();
+    flashlight.Bind(3);
+    drawScene(
+        world,
+        player,
+        flashlight,
+        lightSpaceMatrix,
+        shadowMap
+    );
+    flashlight.Unbind();
 
     if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -40,23 +31,51 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {
-    drawScene(world, shader);
+    shader.Bind();
+
+    for (auto& entity : world.GetEntities()) {
+        if (!entity->GetMesh()) continue;
+        if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices",entity->GetSkeleton()->GetSkinningMatrices());
+
+        shader.SetMat4("uModel", entity->GetWorldModel());
+        entity->GetMesh()->Draw();
+    }
+
+    shader.Unbind();
 }
 
-void GameRenderer::draw(const World& world) {
-    drawScene(world, m_shader);
-}
-
-void GameRenderer::drawScene(const World& world, Shader& shader) {
+void GameRenderer::drawScene(
+    const World& world,
+    Player& player,
+    Flashlight& flashlight,
+    const glm::mat4& lightSpaceMatrix,
+    uint32_t shadowMap
+) {
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
 
-        if (entity->HasSkeleton()) { shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices()); }
+        auto& material = entity->GetMaterial();
+        Shader& shader = material->GetShader();
 
-        entity->GetMaterial()->Bind();
-            shader.SetMat4("uModel", entity->GetWorldModel());
-            entity->GetMesh()->Draw();
-        entity->GetMaterial()->Unbind();
+        shader.Bind();
+            shader.SetBool("uUnlit", m_unlit);
+
+            setCameraUniforms(shader, player);
+            setLightUniforms(shader, flashlight);
+
+            shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, shadowMap);
+            shader.SetInt("uShadowMap", 4);
+
+            if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices());
+
+            material->Bind();
+                shader.SetMat4("uModel", entity->GetWorldModel());
+                entity->GetMesh()->Draw();
+            material->Unbind();
+        shader.Unbind();
     }
 }
 
@@ -86,24 +105,24 @@ void GameRenderer::drawColliders(const World& world, Player& player) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void GameRenderer::setCameraUniforms(Player& player) {
-    m_shader.SetMat4("uView", player.GetCamera().GetViewMatrix(player.GetEyePosition()));
-    m_shader.SetMat4("uProjection", player.GetCamera().GetProjectionMatrix());
-    m_shader.SetVec3("uCameraPosition", player.GetEyePosition());
+void GameRenderer::setCameraUniforms(Shader& shader, Player& player) {
+    shader.SetMat4("uView", player.GetCamera().GetViewMatrix(player.GetEyePosition()));
+    shader.SetMat4("uProjection", player.GetCamera().GetProjectionMatrix());
+    shader.SetVec3("uCameraPosition", player.GetEyePosition());
 }
 
-void GameRenderer::setLightUniforms(Flashlight& flashlight) {
+void GameRenderer::setLightUniforms(Shader& shader, Flashlight& flashlight) {
     // Flashlight
     const auto& properties = flashlight.GetProperties();
-    m_shader.SetBool("uLight.Enabled", properties.Enabled);
-    m_shader.SetVec3("uLight.Radiance", properties.Radiance * flashlight.GetIntensityMultiplier());
-    m_shader.SetVec3("uLight.Position", flashlight.GetPosition());
-    m_shader.SetFloat("uLight.InnerCutoff", std::cos(glm::radians(properties.InnerCutoff)));
-    m_shader.SetFloat("uLight.OuterCutoff", std::cos(glm::radians(properties.OuterCutoff)));
-    m_shader.SetVec3("uLight.Direction", flashlight.GetDirection());
-    m_shader.SetInt("uFlashlightCookie", 3);
+    shader.SetBool("uLight.Enabled", properties.Enabled);
+    shader.SetVec3("uLight.Radiance", properties.Radiance * flashlight.GetIntensityMultiplier());
+    shader.SetVec3("uLight.Position", flashlight.GetPosition());
+    shader.SetFloat("uLight.InnerCutoff", std::cos(glm::radians(properties.InnerCutoff)));
+    shader.SetFloat("uLight.OuterCutoff", std::cos(glm::radians(properties.OuterCutoff)));
+    shader.SetVec3("uLight.Direction", flashlight.GetDirection());
+    shader.SetInt("uFlashlightCookie", 3);
 
     // Ambient
-    m_shader.SetVec3("uAmbientColor", {0.01f, 0.01f, 0.015f});
-    m_shader.SetFloat("uAmbientIntensity", 0.02f);
+    shader.SetVec3("uAmbientColor", {0.01f, 0.01f, 0.015f});
+    shader.SetFloat("uAmbientIntensity", 0.02f);
 }

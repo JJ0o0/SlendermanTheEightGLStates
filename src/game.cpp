@@ -3,6 +3,7 @@
 #include <graphics/model_loader.hpp>
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
+#include <graphics/materials/terrain_material.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
 
@@ -68,7 +69,9 @@ void Game::Update(float deltatime) {
     m_player.ProcessInput(m_window.GetHandle(), deltatime);
     m_player.Update(deltatime, m_world);
 
-    if (!m_timeStop) m_animator.Update(deltatime);
+    if (!m_timeStop) { 
+        // CÓDIGOS QUE PODEM SER PARADOS
+    }
 }
 
 void Game::Render() {
@@ -155,46 +158,25 @@ void Game::loadResources() {
         "assets/shaders/shadow_depth.frag"
     );
 
+    m_terrainShader = std::make_unique<Shader>(
+        "assets/shaders/terrain.vert",
+        "assets/shaders/terrain.frag"
+    );
+
     // ENTITIES
     auto& floor = m_world.CreateEntity("Floor");
     floor.SetMesh(std::make_shared<Mesh>(CreateCube()));
 
-    auto albedo = std::make_shared<Texture>(TextureProperties{
-        .SRGB = true,
-        .ImagePath = "assets/textures/wood_albedo.jpg",
-    });
+    auto terrainMaterial = std::make_shared<TerrainMaterial>(*m_terrainShader);
+    terrainMaterial->SetTextures(TerrainTextureSet{});
 
-    auto normal = std::make_shared<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/wood_normal.jpg",
-    });
-
-    auto arm = std::make_shared<Texture>(TextureProperties{
-        .ImagePath = "assets/textures/wood_arm.jpg",
-    });
-
-    auto material = std::make_shared<PBRMaterial>(*m_defaultShader);
-    material->SetTextures(PBRTextureSet{
-        albedo,
-        normal,
-        arm
-    });
-
-    floor.SetMaterial(material);
+    floor.SetMaterial(terrainMaterial);
 
     auto& floorTransform = floor.GetTransform();
     floorTransform.Position.y = -1.0f;
     floorTransform.Scale = {50.0f, 0.1f, 50.0f};
 
     floor.SetCollider(Collider(floorTransform.Scale));
-
-    auto& model = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/spongebob_dancing_18.glb", *m_defaultShader, nullptr, &m_animations);
-    //model.GetTransform().RotateEuler({45.0f, 0.0f, 0.0f});
-    model.GetTransform().Scale *= 10.0f;
-    model.GetTransform().Position.z = 1.5f;
-    model.SnapToGround(m_world);
-    model.GetTransform().Position.y += 0.1f;
-
-    if (!m_animations.empty()) m_animator.Play(m_animations[0]);
 
     // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
@@ -209,7 +191,7 @@ void Game::loadResources() {
     });
     
     // RENDERERS
-    m_renderer = std::make_unique<GameRenderer>(*m_defaultShader);
+    m_renderer = std::make_unique<GameRenderer>();
     m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
     m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
 }

@@ -48,6 +48,10 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& ind
     glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, JointWeights));
     glEnableVertexAttribArray(5);
 
+    // Color
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color));
+    glEnableVertexAttribArray(6);
+
     glBindVertexArray(0);
 }
 

@@ -41,15 +41,13 @@ class Game {
 
         std::unique_ptr<Shader> m_defaultShader;
         std::unique_ptr<Shader> m_shadowShader;
+        std::unique_ptr<Shader> m_terrainShader;
 
         std::unique_ptr<Cubemap> m_skyboxCubemap;
 
         std::unique_ptr<GameRenderer> m_renderer;
         std::unique_ptr<SkyboxRenderer> m_skyboxRenderer;
         std::unique_ptr<ShadowRenderer> m_shadowRenderer;
-
-        std::vector<AnimationClip> m_animations;
-        Animator m_animator;
         
         World m_world{};
 

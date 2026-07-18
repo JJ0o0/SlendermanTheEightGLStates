@@ -9,7 +9,7 @@
 
 class GameRenderer {
     public:
-        GameRenderer(Shader& shader);
+        GameRenderer();
 
         void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(const World& world, Shader& shader);
@@ -26,8 +26,6 @@ class GameRenderer {
         void SetUnlit(bool unlit) { m_unlit = unlit; }
         bool IsUnlit() const { return m_unlit; }
     private:
-        Shader& m_shader;
-
         std::unique_ptr<Shader> m_debugLineShader;
         std::unique_ptr<Mesh> m_debugCubeMesh;
         
@@ -35,9 +33,15 @@ class GameRenderer {
         bool m_wireframe = false;
         bool m_showColliders = false;
 
-        void draw(const World& world);
-        void drawScene(const World& world, Shader& shader);
+        void drawScene(
+            const World& world,
+            Player& player,
+            Flashlight& flashlight,
+            const glm::mat4& lightSpaceMatrix,
+            uint32_t shadowMap
+        );
+
         void drawColliders(const World& world, Player& player);
-        void setCameraUniforms(Player& player);
-        void setLightUniforms(Flashlight& flashlight);
+        void setCameraUniforms(Shader& shader, Player& player);
+        void setLightUniforms(Shader& shader, Flashlight& flashlight);
 };

@@ -38,6 +38,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/graphics/animation/animator.cpp"
     "src/graphics/materials/basic_material.cpp"
     "src/graphics/materials/pbr_material.cpp"
+    "src/graphics/materials/terrain_material.cpp"
 
     "src/platform/window.cpp"
     "src/platform/error_handling.cpp"

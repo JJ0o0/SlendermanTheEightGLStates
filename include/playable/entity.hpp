@@ -2,7 +2,7 @@
 
 #include <graphics/mesh.hpp>
 #include <graphics/shader.hpp>
-#include <graphics/materials/pbr_material.hpp>
+#include <graphics/material.hpp> 
 #include <playable/transform.hpp>
 #include <playable/collider.hpp>
 #include <optional>
@@ -21,8 +21,8 @@ class Entity {
         void SetMesh(const std::shared_ptr<Mesh>& mesh) { m_mesh = mesh; }
         const std::shared_ptr<Mesh>& GetMesh() const { return m_mesh; }
 
-        void SetMaterial(const std::shared_ptr<PBRMaterial>& material) { m_material = material; }
-        const std::shared_ptr<PBRMaterial>& GetMaterial() const { return m_material; }
+        void SetMaterial(const std::shared_ptr<Material>& material) { m_material = material; }
+        const std::shared_ptr<Material>& GetMaterial() const { return m_material; }
 
         std::optional<AABB> GetWorldBounds() const;
         AABB GetColliderAABB() const { return m_collider->GetAABB(GetWorldPosition()); }
@@ -51,7 +51,7 @@ class Entity {
     private:
         std::string m_name;
         std::shared_ptr<Mesh> m_mesh; // alguma classe *Model* para lidar com várias meshes, por enquanto só uma
-        std::shared_ptr<PBRMaterial> m_material;
+        std::shared_ptr<Material> m_material;
         Transform m_transform{};
         std::optional<Collider> m_collider;
         std::shared_ptr<Skeleton> m_skeleton;

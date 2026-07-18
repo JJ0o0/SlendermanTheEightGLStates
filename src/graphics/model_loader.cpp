@@ -1,4 +1,5 @@
 #include <graphics/model_loader.hpp>
+#include <graphics/materials/pbr_material.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/glm_element_traits.hpp>

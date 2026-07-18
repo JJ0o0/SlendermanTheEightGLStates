@@ -2,6 +2,7 @@
 
 #include <world.hpp>
 #include <graphics/shader.hpp>
+#include <graphics/texture.hpp>
 #include <graphics/vertex.hpp>
 #include <graphics/skeleton.hpp>
 #include <graphics/animation/animation_clip.hpp>

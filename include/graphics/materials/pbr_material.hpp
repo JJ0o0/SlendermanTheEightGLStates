@@ -20,6 +20,8 @@ class PBRMaterial : public Material {
 
         void Bind() override;
         void Unbind() override {}
+
+        Shader& GetShader() override { return m_shader; }
     private:
         Shader& m_shader;
 
