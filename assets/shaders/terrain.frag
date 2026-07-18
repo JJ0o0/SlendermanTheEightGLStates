@@ -85,16 +85,45 @@ float geometrySmith(vec3 n, vec3 v, vec3 l, float r) {
     return ggx1 * ggx2;
 }
 
+vec2 hash2D(vec2 p) {
+    p = vec2(dot(p, vec2(127.1, 311.7)),
+             dot(p, vec2(269.5, 183.3)));
+    return fract(sin(p) * 43758.5453123) * 2.0 - 1.0;
+}
+
+float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash2D(i).x;
+    float b = hash2D(i + vec2(1.0, 0.0)).x;
+    float c = hash2D(i + vec2(0.0, 1.0)).x;
+    float d = hash2D(i + vec2(1.0, 1.0)).x;
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+vec2 warpUV(vec2 uv, vec2 worldXZ) {
+    vec2 warpCoord = worldXZ * 0.05;
+
+    float nx = valueNoise(warpCoord);
+    float ny = valueNoise(warpCoord + vec2(37.2, 91.7));
+
+    return uv + vec2(nx, ny) * 0.35;
+}
+
 MaterialData getMaterial() {
     MaterialData data;
 
-    vec2 tiledUV = WorldPos.xz * uTextureTiling;
+    vec2 tiledUV = warpUV(WorldPos.xz, WorldPos.xz) * uTextureTiling;
+    float macroVariation = valueNoise(WorldPos.xz * 0.03) * 0.15 + 0.925;
     float blend = VertexColor.r;
     blend = smoothstep(0.35, 0.65, blend);
 
     vec3 grassAlbedo = texture(uGrassAlbedoMap, tiledUV).rgb;
     vec3 dirtAlbedo = texture(uDirtAlbedoMap, tiledUV).rgb;
-    data.Albedo = mix(grassAlbedo, dirtAlbedo, blend);
+    data.Albedo = mix(grassAlbedo, dirtAlbedo, blend) * macroVariation;
 
     vec3 grassArm = texture(uGrassARMMap, tiledUV).rgb;
     vec3 dirtArm = texture(uDirtARMMap, tiledUV).rgb;

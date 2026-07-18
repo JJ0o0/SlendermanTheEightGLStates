@@ -5,6 +5,7 @@
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
 #include <graphics/materials/terrain_material.hpp>
+#include <utilities.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
 
@@ -174,39 +175,26 @@ void Game::loadResources() {
     // ENTITIES
     auto& floor = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/MapFloor/map.gltf", *m_terrainShader, true);
 
-    auto grassAlbedo = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_albedo.jpg#srgb", [&]() {
-        return std::make_shared<Texture>(TextureProperties{
-            .SRGB = true,
-            .ImagePath = "assets/textures/ground/grass/grass_floor_albedo.jpg"
-        });
-    });
+    auto grassSet = MaterialUtilities::CreatePBRTextureSet(
+        "assets/textures/ground/grass/grass_floor_albedo.jpg",
+        "assets/textures/ground/grass/grass_floor_normal.jpg",
+        "assets/textures/ground/grass/grass_floor_arm.jpg"
+    );
 
-    auto grassNormal = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_normal.jpg#linear", [&]() {
-        return std::make_shared<Texture>(TextureProperties{
-            .ImagePath = "assets/textures/ground/grass/grass_floor_normal.jpg"
-        });
-    });
-
-    auto grassARM = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_arm.jpg#linear", [&]() {
-        return std::make_shared<Texture>(TextureProperties{
-            .ImagePath = "assets/textures/ground/grass/grass_floor_arm.jpg"
-        });
-    });
-
-    auto grassTextureSet = PBRTextureSet {
-        grassAlbedo,
-        grassNormal,
-        grassARM
-    };
+    auto dirtSet = MaterialUtilities::CreatePBRTextureSet(
+        "assets/textures/ground/dirt/dirt_floor_albedo.jpg",
+        "assets/textures/ground/dirt/dirt_floor_normal.jpg",
+        "assets/textures/ground/dirt/dirt_floor_arm.jpg"
+    );
 
     auto terrainMaterial = std::make_shared<TerrainMaterial>(*m_terrainShader);
     
     terrainMaterial->SetTextures(TerrainTextureSet{
-        grassTextureSet
+        grassSet,
+        dirtSet
     });
 
     floor.ForEachDescendant([&, terrainMaterial](Entity& e) {
-        std::cout << "Aplicando material em " << e.GetName() << "\n";
         e.SetMaterial(terrainMaterial);
     });
 
