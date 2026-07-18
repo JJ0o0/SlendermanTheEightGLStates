@@ -1,5 +1,6 @@
 #include <game.hpp>
 #include <platform/config_file.hpp>
+#include <platform/asset_manager.hpp>
 #include <graphics/model_loader.hpp>
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
@@ -164,11 +165,42 @@ void Game::loadResources() {
     );
 
     // ENTITIES
+    auto cube = AssetManager<Mesh>::GetOrLoad("shapes/cube", [&]() {
+        return std::make_shared<Mesh>(CreateCube());
+    });
+
     auto& floor = m_world.CreateEntity("Floor");
-    floor.SetMesh(std::make_shared<Mesh>(CreateCube()));
+    floor.SetMesh(cube);
+
+    auto grassAlbedo = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_albedo.jpg#srgb", [&]() {
+        return std::make_shared<Texture>(TextureProperties{
+            .SRGB = true,
+            .ImagePath = "assets/textures/ground/grass/grass_floor_albedo.jpg"
+        });
+    });
+
+    auto grassNormal = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_normal.jpg#linear", [&]() {
+        return std::make_shared<Texture>(TextureProperties{
+            .ImagePath = "assets/textures/ground/grass/grass_floor_normal.jpg"
+        });
+    });
+
+    auto grassARM = AssetManager<Texture>::GetOrLoad("assets/textures/ground/grass/grass_floor_arm.jpg#linear", [&]() {
+        return std::make_shared<Texture>(TextureProperties{
+            .ImagePath = "assets/textures/ground/grass/grass_floor_arm.jpg"
+        });
+    });
+
+    auto grassTextureSet = PBRTextureSet {
+        grassAlbedo,
+        grassNormal,
+        grassARM
+    };
 
     auto terrainMaterial = std::make_shared<TerrainMaterial>(*m_terrainShader);
-    terrainMaterial->SetTextures(TerrainTextureSet{});
+    terrainMaterial->SetTextures(TerrainTextureSet{
+        grassTextureSet
+    });
 
     floor.SetMaterial(terrainMaterial);
 
@@ -177,6 +209,20 @@ void Game::loadResources() {
     floorTransform.Scale = {50.0f, 0.1f, 50.0f};
 
     floor.SetCollider(Collider(floorTransform.Scale));
+
+    auto& tree01 = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/Tree01/Tree01.gltf", *m_defaultShader);
+    
+    auto& tree01Transform = tree01.GetTransform();
+    tree01.SnapToGround(m_world);
+
+    tree01.ForEachDescendant([](Entity& e) {
+        if (e.GetName() == "Tree_Branches_02") {
+            if (auto pbr = e.GetMaterialAs<PBRMaterial>()) {
+                pbr->SetDoubleSided(true);
+                pbr->SetAlphaCutout(true);
+            }
+        }
+    });
 
     // CUBEMAPS
     m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{

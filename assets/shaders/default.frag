@@ -15,6 +15,8 @@ struct MaterialData {
     float Metallic;
     float Roughness;
     float AO;
+
+    float Alpha;
 };
 
 struct Light {
@@ -30,6 +32,7 @@ struct Light {
 };
 
 uniform bool uUnlit;
+uniform bool uAlphaCutout;
 
 uniform vec3 uCameraPosition;
 uniform Light uLight;
@@ -80,7 +83,10 @@ float geometrySmith(vec3 n, vec3 v, vec3 l, float r) {
 
 MaterialData getMaterial() {
     MaterialData data;
-    data.Albedo = texture(uAlbedoMap, TexCoord).rgb;
+
+    vec4 albedoSample = texture(uAlbedoMap, TexCoord);
+    data.Albedo = albedoSample.rgb;
+    data.Alpha = albedoSample.a;
 
     vec3 arm = texture(uARMMap, TexCoord).rgb;
 
@@ -232,6 +238,7 @@ vec3 applyFog(vec3 color) {
 
 void main() {
     MaterialData material = getMaterial();
+    if (uAlphaCutout && material.Alpha < 0.5) discard;
 
     vec3 color;
     if (uUnlit) { color = material.Albedo; }

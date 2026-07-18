@@ -1,7 +1,10 @@
 #version 410 core
-layout(location = 0) in vec3 aPos;
-layout(location = 4) in ivec4 aJoints;
-layout(location = 5) in vec4 aWeights;
+layout (location = 0) in vec3 aPos;
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 4) in ivec4 aJoints;
+layout (location = 5) in vec4 aWeights;
+
+out vec2 TexCoord;
 
 uniform mat4 uModel;
 uniform mat4 uLightSpaceMatrix;
@@ -23,5 +26,6 @@ void main() {
         skinMatrix = mat4(1.0);
     }
 
+    TexCoord = aTexCoord;
     gl_Position = uLightSpaceMatrix * uModel * skinMatrix * vec4(aPos, 1.0);
 }

@@ -1,6 +1,12 @@
 #include <graphics/materials/pbr_material.hpp>
 
 void PBRMaterial::Bind() {
+    if (m_doubleSided) glDisable(GL_CULL_FACE);
+
+    if (m_shader.UniformExists("uAlphaCutout")) {
+        m_shader.SetBool("uAlphaCutout", m_alphaCutout);
+    }
+
     int slot = 0;
 
     auto& fallback = fallbacks();
@@ -21,6 +27,27 @@ void PBRMaterial::Bind() {
         arm->Bind(slot);
         m_shader.SetInt("uARMMap", slot++);
     }
+}
+
+void PBRMaterial::Unbind() {
+    if (m_doubleSided) glEnable(GL_CULL_FACE);
+}
+
+void PBRMaterial::BindDepth(Shader& shader) {
+    if (m_doubleSided) glDisable(GL_CULL_FACE);
+
+    if (m_alphaCutout && shader.UniformExists("uAlbedoMap")) {
+        shader.SetBool("uAlphaCutout", m_alphaCutout);
+
+        auto& fallback = fallbacks();
+        auto& albedo = m_textures.Albedo ? m_textures.Albedo : fallback.Albedo;
+        albedo->Bind(12);
+        shader.SetInt("uAlbedoMap", 12);
+    }
+}
+
+void PBRMaterial::UnbindDepth(Shader& shader) {
+    if (m_doubleSided) glEnable(GL_CULL_FACE);
 }
 
 PBRTextureSet& PBRMaterial::fallbacks() {

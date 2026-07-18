@@ -3,6 +3,8 @@
 void TerrainMaterial::Bind() {
     int slot = 5;
 
+    m_shader.SetFloat("uTextureTiling", m_tiling);
+
     auto& grass = grassFallbacks();
     auto& grassAlbedo = m_textures.Grass.Albedo ? m_textures.Grass.Albedo : grass.Albedo;
     grassAlbedo->Bind(slot);

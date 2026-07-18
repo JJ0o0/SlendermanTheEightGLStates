@@ -49,6 +49,8 @@ uniform sampler2D uDirtARMMap;
 uniform sampler2D uFlashlightCookie;
 uniform sampler2D uShadowMap;
 
+uniform float uTextureTiling;
+
 vec3 calculateFresnelSchlick(float cosTheta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(1.0 - cosTheta, 5.0);
 }
@@ -86,23 +88,24 @@ float geometrySmith(vec3 n, vec3 v, vec3 l, float r) {
 MaterialData getMaterial() {
     MaterialData data;
 
+    vec2 tiledUV = WorldPos.xz * uTextureTiling;
     float blend = VertexColor.r;
 
-    vec3 grassAlbedo = texture(uGrassAlbedoMap, TexCoord).rgb;
-    vec3 dirtAlbedo = texture(uDirtAlbedoMap, TexCoord).rgb;
-    data.Albedo = mix(grassAlbedo, dirtAlbedo, blend);
+    vec3 grassAlbedo = texture(uGrassAlbedoMap, tiledUV).rgb;
+    vec3 dirtAlbedo = texture(uDirtAlbedoMap, tiledUV).rgb;
+    data.Albedo = mix(dirtAlbedo, grassAlbedo, blend);
 
-    vec3 grassArm = texture(uGrassARMMap, TexCoord).rgb;
-    vec3 dirtArm = texture(uDirtARMMap, TexCoord).rgb;
-    vec3 arm = mix(grassArm, dirtArm, blend);
+    vec3 grassArm = texture(uGrassARMMap, tiledUV).rgb;
+    vec3 dirtArm = texture(uDirtARMMap, tiledUV).rgb;
+    vec3 arm = mix(dirtArm, grassArm, blend);
 
     data.AO = arm.r;
     data.Roughness = arm.g;
     data.Metallic = arm.b;
 
-    vec3 grassNormal = texture(uGrassNormalMap, TexCoord).rgb;
-    vec3 dirtNormal = texture(uDirtNormalMap, TexCoord).rgb;
-    vec3 tangentNormal = mix(grassNormal, dirtNormal, blend);
+    vec3 grassNormal = texture(uGrassNormalMap, tiledUV).rgb;
+    vec3 dirtNormal = texture(uDirtNormalMap, tiledUV).rgb;
+    vec3 tangentNormal = mix(dirtNormal, grassNormal, blend);
     tangentNormal = tangentNormal * 2.0 - 1.0;
     data.Normal = normalize(TBN * tangentNormal);
 

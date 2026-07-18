@@ -3,6 +3,7 @@
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/glm_element_traits.hpp>
+#include <platform/asset_manager.hpp>
 #include <platform/error_handling.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
@@ -46,7 +47,8 @@ Entity& ModelLoader::LoadModelIntoWorld(
             asset.get(), 
             nodeIndex, 
             &root, 
-            baseDir, 
+            baseDir,
+            path,
             shader,
             nodeToEntity,
             skinnedMeshEntities
@@ -76,86 +78,94 @@ void ModelLoader::attachMeshAndMaterial(
     const fastgltf::Asset& asset, 
     const fastgltf::Primitive& primitive, 
     const std::string& baseDir, 
-    Shader& shader
+    Shader& shader,
+    const std::string& meshCacheKey
 ) {
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    auto cachedMesh = AssetManager<Mesh>::TryGet(meshCacheKey);
+    if (cachedMesh) {
+        entity.SetMesh(cachedMesh);
+    } else {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
 
-    // Vertex Position
-    auto posIt = primitive.findAttribute("POSITION");
-    if (posIt == primitive.attributes.end()) return;
+        // Vertex Position
+        auto posIt = primitive.findAttribute("POSITION");
+        if (posIt == primitive.attributes.end()) return;
 
-    const auto& positionAccessor = asset.accessors[posIt->accessorIndex];
-    vertices.resize(positionAccessor.count);
+        const auto& positionAccessor = asset.accessors[posIt->accessorIndex];
+        vertices.resize(positionAccessor.count);
 
-    fastgltf::iterateAccessorWithIndex<glm::vec3>(asset, positionAccessor, [&](glm::vec3 pos, size_t index) {
-        vertices[index].Position = pos;
-    });
-
-    // Vertex Normal
-    auto normalIt = primitive.findAttribute("NORMAL");
-    if (normalIt != primitive.attributes.end()) {
-        const auto& accessor = asset.accessors[normalIt->accessorIndex];
-        fastgltf::iterateAccessorWithIndex<glm::vec3>(asset, accessor,[&](glm::vec3 n, size_t idx) { 
-            vertices[idx].Normal = n; 
-        });
-    }
-
-    // Vertex TexCoord
-    auto uvIt = primitive.findAttribute("TEXCOORD_0");
-    if (uvIt != primitive.attributes.end()) {
-        const auto& accessor = asset.accessors[uvIt->accessorIndex];
-        fastgltf::iterateAccessorWithIndex<glm::vec2>(asset, accessor,[&](glm::vec2 uv, size_t idx) { 
-            glm::vec2 invertedUV = {
-                uv.x,
-                1.0f - uv.y
-            };
-
-            vertices[idx].TexCoord = invertedUV; 
-        });
-    }
-
-    // Vertex Tangent
-    auto tanIt = primitive.findAttribute("TANGENT");
-    bool hasTangents = tanIt != primitive.attributes.end();
-    if (hasTangents) {
-        const auto& accessor = asset.accessors[tanIt->accessorIndex];
-        fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor,[&](glm::vec4 t, size_t idx) { 
-            vertices[idx].Tangent = glm::vec3(t); 
-        });
-    }
-
-    // Vertex Joints
-    auto jointsIt = primitive.findAttribute("JOINTS_0");
-    if (jointsIt != primitive.attributes.end()) {
-        const auto& accessor = asset.accessors[jointsIt->accessorIndex];
-        fastgltf::iterateAccessorWithIndex<glm::uvec4>(asset, accessor, [&](glm::uvec4 j, size_t idx) {
-            vertices[idx].JointIndices = glm::ivec4(j);
-        });
-    }
-
-    // Vertex Weights
-    auto weightsIt = primitive.findAttribute("WEIGHTS_0");
-    if (weightsIt != primitive.attributes.end()) {
-        const auto& accessor = asset.accessors[weightsIt->accessorIndex];
-        fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor, [&](glm::vec4 w, size_t idx) {
-            vertices[idx].JointWeights = w;
-        });
-    }
-
-    // Indices
-    if (primitive.indicesAccessor.has_value()) {
-        const auto& accessor = asset.accessors[*primitive.indicesAccessor];
-        indices.resize(accessor.count);
-
-        fastgltf::iterateAccessorWithIndex<uint32_t>(asset, accessor,[&](uint32_t index, size_t idx) { 
-            indices[idx] = index; 
+        fastgltf::iterateAccessorWithIndex<glm::vec3>(asset, positionAccessor, [&](glm::vec3 pos, size_t index) {
+            vertices[index].Position = pos;
         });
 
-        if (!hasTangents) generateTangents(vertices, indices);
-    }
+        // Vertex Normal
+        auto normalIt = primitive.findAttribute("NORMAL");
+        if (normalIt != primitive.attributes.end()) {
+            const auto& accessor = asset.accessors[normalIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::vec3>(asset, accessor,[&](glm::vec3 n, size_t idx) { 
+                vertices[idx].Normal = n; 
+            });
+        }
 
-    entity.SetMesh(std::make_shared<Mesh>(vertices, indices));
+        // Vertex TexCoord
+        auto uvIt = primitive.findAttribute("TEXCOORD_0");
+        if (uvIt != primitive.attributes.end()) {
+            const auto& accessor = asset.accessors[uvIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::vec2>(asset, accessor,[&](glm::vec2 uv, size_t idx) { 
+                glm::vec2 invertedUV = {
+                    uv.x,
+                    1.0f - uv.y
+                };
+
+                vertices[idx].TexCoord = invertedUV; 
+            });
+        }
+
+        // Vertex Tangent
+        auto tanIt = primitive.findAttribute("TANGENT");
+        bool hasTangents = tanIt != primitive.attributes.end();
+        if (hasTangents) {
+            const auto& accessor = asset.accessors[tanIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor,[&](glm::vec4 t, size_t idx) { 
+                vertices[idx].Tangent = glm::vec3(t); 
+            });
+        }
+
+        // Vertex Joints
+        auto jointsIt = primitive.findAttribute("JOINTS_0");
+        if (jointsIt != primitive.attributes.end()) {
+            const auto& accessor = asset.accessors[jointsIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::uvec4>(asset, accessor, [&](glm::uvec4 j, size_t idx) {
+                vertices[idx].JointIndices = glm::ivec4(j);
+            });
+        }
+
+        // Vertex Weights
+        auto weightsIt = primitive.findAttribute("WEIGHTS_0");
+        if (weightsIt != primitive.attributes.end()) {
+            const auto& accessor = asset.accessors[weightsIt->accessorIndex];
+            fastgltf::iterateAccessorWithIndex<glm::vec4>(asset, accessor, [&](glm::vec4 w, size_t idx) {
+                vertices[idx].JointWeights = w;
+            });
+        }
+
+        // Indices
+        if (primitive.indicesAccessor.has_value()) {
+            const auto& accessor = asset.accessors[*primitive.indicesAccessor];
+            indices.resize(accessor.count);
+
+            fastgltf::iterateAccessorWithIndex<uint32_t>(asset, accessor,[&](uint32_t index, size_t idx) { 
+                indices[idx] = index; 
+            });
+
+            if (!hasTangents) generateTangents(vertices, indices);
+        }
+
+        auto mesh = std::make_shared<Mesh>(vertices, indices);
+        AssetManager<Mesh>::Store(meshCacheKey, mesh);
+        entity.SetMesh(mesh);
+    }
 
     // Materials
     if (primitive.materialIndex.has_value()) {
@@ -352,7 +362,8 @@ void ModelLoader::createNodeEntity(
     const fastgltf::Asset& asset, 
     size_t nodeIndex,
     Entity* parent, 
-    const std::string& baseDir, 
+    const std::string& baseDir,
+    const std::string& path,
     Shader& shader,
     std::unordered_map<size_t, Entity*>& nodeToEntity,
     std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
@@ -392,7 +403,8 @@ void ModelLoader::createNodeEntity(
                 ? entity 
                 : world.CreateEntity(name + "_part" + std::to_string(i), &entity);
 
-            attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader);
+            std::string meshCacheKey = path + "#mesh" + std::to_string(*node.meshIndex) + "#prim" + std::to_string(i);
+            attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader, meshCacheKey);
 
             if (node.skinIndex.has_value()) skinnedMeshEntities[nodeIndex].push_back(&target);
         }
@@ -404,7 +416,8 @@ void ModelLoader::createNodeEntity(
             asset, 
             childIndex, 
             &entity, 
-            baseDir, 
+            baseDir,
+            path, 
             shader,
             nodeToEntity,
             skinnedMeshEntities
@@ -455,7 +468,11 @@ std::shared_ptr<Texture> ModelLoader::loadTexture(
 
         [&](const fastgltf::sources::URI& uri) {
             std::string path = (std::filesystem::path(baseDirectory) / uri.uri.fspath()).string();
-            result = std::make_shared<Texture>(TextureProperties{ .SRGB = srgb, .ImagePath = path });
+            std::string key = path + (srgb ? "#srgb" : "#linear");
+
+            result = AssetManager<Texture>::GetOrLoad(key, [&]() {
+                return std::make_shared<Texture>(TextureProperties{ .SRGB = srgb, .ImagePath = path });
+            });
         },
 
         [&](const fastgltf::sources::Array& array) {

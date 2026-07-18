@@ -31,17 +31,17 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {
-    shader.Bind();
-
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
-        if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices",entity->GetSkeleton()->GetSkinningMatrices());
+        auto& material = entity->GetMaterial();
 
-        shader.SetMat4("uModel", entity->GetWorldModel());
-        entity->GetMesh()->Draw();
+        material->BindDepth(shader);
+            if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices",entity->GetSkeleton()->GetSkinningMatrices());
+
+            shader.SetMat4("uModel", entity->GetWorldModel());
+            entity->GetMesh()->Draw();
+        material->UnbindDepth(shader);
     }
-
-    shader.Unbind();
 }
 
 void GameRenderer::drawScene(

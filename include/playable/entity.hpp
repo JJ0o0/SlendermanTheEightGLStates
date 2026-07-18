@@ -6,6 +6,7 @@
 #include <playable/transform.hpp>
 #include <playable/collider.hpp>
 #include <optional>
+#include <vector>
 #include <memory>
 
 class World;
@@ -24,6 +25,11 @@ class Entity {
         void SetMaterial(const std::shared_ptr<Material>& material) { m_material = material; }
         const std::shared_ptr<Material>& GetMaterial() const { return m_material; }
 
+        template <typename T>
+        std::shared_ptr<T> GetMaterialAs() const {
+            return std::dynamic_pointer_cast<T>(m_material);
+        }
+
         std::optional<AABB> GetWorldBounds() const;
         AABB GetColliderAABB() const { return m_collider->GetAABB(GetWorldPosition()); }
         bool HasCollider() const { return m_collider.has_value(); }
@@ -39,8 +45,23 @@ class Entity {
         Transform& GetTransform() { return m_transform; }
         const Transform& GetTransform() const { return m_transform; }
 
-        void SetParent(Entity* parent) { m_parent = parent; }
+        void SetParent(Entity* parent) { 
+            if (m_parent) std::erase(m_parent->m_children, this);
+
+            m_parent = parent;
+
+            if (parent) parent->m_children.push_back(this);
+        }
+
+        void ForEachDescendant(const std::function<void(Entity&)>& callback) {
+            for (Entity* child : m_children) {
+                callback(*child);
+                child->ForEachDescendant(callback);
+            }
+        }
+
         Entity* GetParent() const { return m_parent; }
+        const std::vector<Entity*>& GetChildren() const { return m_children; }
 
         glm::mat4 GetWorldModel() const {
             glm::mat4 local = m_transform.GetModel();
@@ -50,11 +71,12 @@ class Entity {
         glm::vec3 GetWorldPosition() const { return glm::vec3(GetWorldModel()[3]); }
     private:
         std::string m_name;
-        std::shared_ptr<Mesh> m_mesh; // alguma classe *Model* para lidar com várias meshes, por enquanto só uma
+        std::shared_ptr<Mesh> m_mesh;
         std::shared_ptr<Material> m_material;
         Transform m_transform{};
         std::optional<Collider> m_collider;
         std::shared_ptr<Skeleton> m_skeleton;
 
-        Entity* m_parent = nullptr; 
+        Entity* m_parent = nullptr;
+        std::vector<Entity*> m_children;
 };

@@ -26,7 +26,8 @@ class ModelLoader {
             const fastgltf::Asset& asset, 
             const fastgltf::Primitive& primitive, 
             const std::string& baseDir, 
-            Shader& shader
+            Shader& shader,
+            const std::string& meshCacheKey
         );
 
         static Skeleton parseSkin(
@@ -49,7 +50,8 @@ class ModelLoader {
             const fastgltf::Asset& asset, 
             size_t nodeIndex,
             Entity* parent, 
-            const std::string& baseDir, 
+            const std::string& baseDir,
+            const std::string& path,
             Shader& shader,
             std::unordered_map<size_t, Entity*>& nodeToEntity,
             std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
