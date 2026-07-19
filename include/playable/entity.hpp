@@ -5,6 +5,7 @@
 #include <graphics/material.hpp> 
 #include <playable/transform.hpp>
 #include <playable/collider.hpp>
+#include <functional>
 #include <optional>
 #include <vector>
 #include <memory>
@@ -37,6 +38,9 @@ class Entity {
         const std::optional<Collider>& GetCollider() const { return m_collider; }
 
         bool SnapToGround(const World& world, float maxDistance = 100.0f);
+
+        void SetInstanced(bool value) { m_instanced = value; }
+        bool IsInstanced() const { return m_instanced; }
         
         bool HasSkeleton() const { return m_skeleton != nullptr; }
         void SetSkeleton(const std::shared_ptr<Skeleton>& skeleton) { m_skeleton = skeleton; }
@@ -71,6 +75,8 @@ class Entity {
         glm::vec3 GetWorldPosition() const { return glm::vec3(GetWorldModel()[3]); }
     private:
         std::string m_name;
+        bool m_instanced = false;
+        
         std::shared_ptr<Mesh> m_mesh;
         std::shared_ptr<Material> m_material;
         Transform m_transform{};

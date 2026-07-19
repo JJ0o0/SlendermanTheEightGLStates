@@ -56,11 +56,14 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& ind
 }
 
 Mesh::Mesh(Mesh&& other) noexcept
-    : m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo), m_indexCount(other.m_indexCount) {
+    : m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo), m_instanceVbo(other.m_instanceVbo), 
+      m_indexCount(other.m_indexCount), m_instanceCount(other.m_instanceCount) {
     other.m_vao = 0;
     other.m_vbo = 0;
     other.m_ebo = 0;
+    other.m_instanceVbo = 0;
     other.m_indexCount = 0;
+    other.m_instanceCount = 0;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept {
@@ -68,17 +71,22 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
 
     glDeleteBuffers(1, &m_ebo);
     glDeleteBuffers(1, &m_vbo);
+    glDeleteBuffers(1, &m_instanceVbo);
     glDeleteVertexArrays(1, &m_vao);
 
     m_vao = other.m_vao;
     m_vbo = other.m_vbo;
     m_ebo = other.m_ebo;
+    m_instanceVbo = other.m_instanceVbo;
     m_indexCount = other.m_indexCount;
+    m_instanceCount = other.m_instanceCount;
 
     other.m_vao = 0;
     other.m_vbo = 0;
     other.m_ebo = 0;
+    other.m_instanceVbo = 0;
     other.m_indexCount = 0;
+    other.m_instanceCount = 0;
 
     return *this;
 }
@@ -86,7 +94,33 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
 Mesh::~Mesh() {
     glDeleteBuffers(1, &m_ebo);
     glDeleteBuffers(1, &m_vbo);
+    glDeleteBuffers(1, &m_instanceVbo);
     glDeleteVertexArrays(1, &m_vao);
+}
+
+void Mesh::SetupInstancing(const std::vector<glm::mat4>& matrices) {
+    if (m_vao == 0) return;
+
+    m_instanceCount = matrices.size();
+
+    glBindVertexArray(m_vao);
+
+    glGenBuffers(1, &m_instanceVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_instanceVbo);
+    glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), matrices.data(), GL_STATIC_DRAW);
+
+    for (int i = 0; i < 4; i++) {
+        GLuint location = 7 + i;
+        glEnableVertexAttribArray(location);
+        glVertexAttribPointer(
+            location, 4, GL_FLOAT, GL_FALSE,
+            sizeof(glm::mat4),
+            (void*)(i * sizeof(glm::vec4))
+        );
+        glVertexAttribDivisor(location, 1);
+    }
+
+    glBindVertexArray(0);
 }
 
 void Mesh::Draw() const {
@@ -94,4 +128,11 @@ void Mesh::Draw() const {
 
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
+}
+
+void Mesh::DrawInstanced() const {
+    if (m_vao == 0 || m_instanceVbo == 0) return;
+
+    glBindVertexArray(m_vao);
+    glDrawElementsInstanced(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr, m_instanceCount);
 }

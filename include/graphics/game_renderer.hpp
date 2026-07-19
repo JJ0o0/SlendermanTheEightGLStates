@@ -6,6 +6,7 @@
 #include <graphics/shader.hpp>
 #include <graphics/mesh.hpp>
 #include <graphics/materials/pbr_material.hpp>
+#include <graphics/instanced_batch.hpp>
 
 class GameRenderer {
     public:
@@ -13,6 +14,7 @@ class GameRenderer {
 
         void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(const World& world, Shader& shader);
+        void AddInstancedBatch(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material, const std::vector<glm::mat4>& transforms);
 
         void ToggleShowColliders() { m_showColliders = !m_showColliders; }
         void SetShowColliders(bool showColliders) { m_showColliders = showColliders; }
@@ -29,6 +31,8 @@ class GameRenderer {
         std::unique_ptr<Shader> m_debugLineShader;
         std::unique_ptr<Mesh> m_debugCubeMesh;
         
+        std::vector<InstancedBatch> m_instancedBatches;
+
         bool m_unlit = false;
         bool m_wireframe = false;
         bool m_showColliders = false;

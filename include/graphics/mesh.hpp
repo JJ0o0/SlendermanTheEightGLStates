@@ -16,7 +16,11 @@ class Mesh {
         Mesh(Mesh&& other) noexcept;
         Mesh& operator=(Mesh&& other) noexcept;
 
+        void SetupInstancing(const std::vector<glm::mat4>& matrices);
+        bool IsInstanced() const { return m_instanceVbo != 0; }
+
         void Draw() const;
+        void DrawInstanced() const;
 
         // NÃO É COLISÃO! São dados dos vertíces para outros fins além de colisão.
         const AABB& GetLocalBounds() const { return m_localBounds; }
@@ -26,6 +30,8 @@ class Mesh {
         uint32_t m_vao = 0;
         uint32_t m_vbo = 0;
         uint32_t m_ebo = 0;
+        uint32_t m_instanceVbo = 0;
 
         size_t m_indexCount = 0;
+        size_t m_instanceCount = 0;
 };

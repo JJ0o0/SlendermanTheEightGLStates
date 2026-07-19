@@ -31,8 +31,12 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {
+    shader.SetBool("uInstanced", false);
+
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
+        if (entity->IsInstanced()) continue;
+
         auto& material = entity->GetMaterial();
 
         material->BindDepth(shader);
@@ -42,6 +46,23 @@ void GameRenderer::DrawDepth(const World& world, Shader& shader) {
             entity->GetMesh()->Draw();
         material->UnbindDepth(shader);
     }
+
+    shader.SetBool("uInstanced", true);
+        for (auto& batch : m_instancedBatches) {
+            batch.MaterialReference->BindDepth(shader);
+                batch.MeshReference->DrawInstanced();
+            batch.MaterialReference->UnbindDepth(shader);
+        }
+    shader.SetBool("uInstanced", false);
+}
+
+void GameRenderer::AddInstancedBatch(
+    const std::shared_ptr<Mesh>& mesh,
+    const std::shared_ptr<Material>& material,
+    const std::vector<glm::mat4>& transforms
+) {
+    mesh->SetupInstancing(transforms);
+    m_instancedBatches.push_back({ mesh, material });
 }
 
 void GameRenderer::drawScene(
@@ -53,12 +74,14 @@ void GameRenderer::drawScene(
 ) {
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
+        if (entity->IsInstanced()) continue;
 
         auto& material = entity->GetMaterial();
         Shader& shader = material->GetShader();
 
         shader.Bind();
             shader.SetBool("uUnlit", m_unlit);
+            shader.SetBool("uInstanced", false);
 
             setCameraUniforms(shader, player);
             setLightUniforms(shader, flashlight);
@@ -75,6 +98,28 @@ void GameRenderer::drawScene(
                 shader.SetMat4("uModel", entity->GetWorldModel());
                 entity->GetMesh()->Draw();
             material->Unbind();
+        shader.Unbind();
+    }
+
+    for (auto& batch : m_instancedBatches) {
+        Shader& shader = batch.MaterialReference->GetShader();
+
+        shader.Bind();
+            shader.SetBool("uUnlit", m_unlit);
+            shader.SetBool("uInstanced", true);
+
+            setCameraUniforms(shader, player);
+            setLightUniforms(shader, flashlight);
+
+            shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, shadowMap);
+            shader.SetInt("uShadowMap", 4);
+
+            batch.MaterialReference->Bind();
+                batch.MeshReference->DrawInstanced();
+            batch.MaterialReference->Unbind();
         shader.Unbind();
     }
 }

@@ -5,6 +5,7 @@ layout (location = 2) in vec2 aTexCoord;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in ivec4 aJoints;
 layout (location = 5) in vec4 aWeights;
+layout (location = 7) in mat4 iModel; // Quando Instancing for usado
 
 out vec3 WorldPos;
 out vec2 TexCoord;
@@ -12,6 +13,7 @@ out mat3 TBN;
 
 out vec4 FragPosLightSpace;
 
+uniform bool uInstanced;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
@@ -38,12 +40,13 @@ void main() {
     vec3 skinnedNormal = mat3(skinMatrix) * aNormal;
     vec3 skinnedTangent = mat3(skinMatrix) * aTangent;
 
-    vec4 worldPos = uModel * skinnedPos;
+    mat4 model = uInstanced ? iModel : uModel;
+    vec4 worldPos = model * skinnedPos;
     WorldPos = worldPos.xyz;
     
-    vec3 T = normalize(mat3(uModel) * skinnedTangent);
+    vec3 T = normalize(mat3(model) * skinnedTangent);
 
-    mat3 normalMatrix = transpose(inverse(mat3(uModel)));
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
     vec3 N = normalize(normalMatrix * skinnedNormal);
 
     T = normalize(T - dot(T, N) * N);
