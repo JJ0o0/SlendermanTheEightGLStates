@@ -5,8 +5,9 @@
 #include <graphics/shapes/cube.hpp>
 #include <graphics/shapes/sphere.hpp>
 #include <graphics/materials/terrain_material.hpp>
-#include <utilities.hpp>
+#include <playable/tree_spawner.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <utilities.hpp>
 #include <iostream>
 
 void Game::Initialize() {
@@ -155,9 +156,8 @@ void Game::RenderDebugUI() {
     ImGui::End();
 }
 
-void Game::loadResources() {
-    // SHADERS
-    m_defaultShader = std::make_unique<Shader>(
+void Game::loadShaders() {
+     m_defaultShader = std::make_unique<Shader>(
         "assets/shaders/default.vert",
         "assets/shaders/default.frag"
     );
@@ -171,9 +171,34 @@ void Game::loadResources() {
         "assets/shaders/terrain.vert",
         "assets/shaders/terrain.frag"
     );
+}
 
-    // ENTITIES
-    auto& floor = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/MapFloor/map.gltf", *m_terrainShader, true);
+void Game::loadRenderers() {
+    // CUHEMAP
+    m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
+        .Faces = {
+            "assets/textures/skybox/_px.png",
+            "assets/textures/skybox/_nx.png",
+            "assets/textures/skybox/_ny.png",
+            "assets/textures/skybox/_py.png",
+            "assets/textures/skybox/_pz.png",
+            "assets/textures/skybox/_nz.png"
+        }
+    });
+    
+    // RENDERERS
+    m_renderer = std::make_unique<GameRenderer>();
+    m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
+    m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
+}
+
+void Game::loadEntities() {
+    auto& floor = ModelLoader::LoadModelIntoWorld(
+        m_world, 
+        "assets/models/MapFloor/map.gltf", 
+        *m_terrainShader, 
+        true, true
+    );
 
     auto grassSet = MaterialUtilities::CreatePBRTextureSet(
         "assets/textures/ground/grass/grass_floor_albedo.jpg",
@@ -203,34 +228,15 @@ void Game::loadResources() {
 
     floor.SetCollider(Collider({320.0f, 0.1f, 190.0f}));
 
-    auto& tree01 = ModelLoader::LoadModelIntoWorld(m_world, "assets/models/Tree01/Tree01.gltf", *m_defaultShader);
-    
-    auto& tree01Transform = tree01.GetTransform();
-    tree01.SnapToGround(m_world);
+    // TREE INITIALIZATION
+    auto tree01 = TreeSpawner::LoadSpecies(m_world, *m_defaultShader, "assets/models/Tree01/Tree01.gltf",
+    [](const std::string& name) { return name.find("Branches") != std::string::npos; });
 
-    tree01.ForEachDescendant([&](Entity& e) {
-        if (e.GetName() == "Tree_Branches_02") {
-            if (auto pbr = e.GetMaterialAs<PBRMaterial>()) {
-                pbr->SetDoubleSided(true);
-                pbr->SetAlphaCutout(true);
-            }
-        }
-    });
+    TreeSpawner::Scatter(m_world, *m_renderer, floor, tree01, 500, 1.5f, 20000);
+}
 
-    // CUBEMAPS
-    m_skyboxCubemap = std::make_unique<Cubemap>(CubemapProperties{
-        .Faces = {
-            "assets/textures/skybox/_px.png",
-            "assets/textures/skybox/_nx.png",
-            "assets/textures/skybox/_ny.png",
-            "assets/textures/skybox/_py.png",
-            "assets/textures/skybox/_pz.png",
-            "assets/textures/skybox/_nz.png"
-        }
-    });
-    
-    // RENDERERS
-    m_renderer = std::make_unique<GameRenderer>();
-    m_skyboxRenderer = std::make_unique<SkyboxRenderer>(*m_skyboxCubemap);
-    m_shadowRenderer = std::make_unique<ShadowRenderer>(*m_shadowShader, 2048);
+void Game::loadResources() {
+    loadShaders();
+    loadRenderers();
+    loadEntities();
 }

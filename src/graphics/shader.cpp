@@ -95,6 +95,10 @@ int Shader::getUniformLocation(const std::string& name) {
     return success;
 }
 
+int Shader::getUniformLocationSilent(const std::string& name) {
+    return glGetUniformLocation(m_id, name.c_str());
+}
+
 bool Shader::verifyShader(uint32_t shader, bool isProgram) {
     int success;
     char infoLog[512];

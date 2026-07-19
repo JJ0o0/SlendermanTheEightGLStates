@@ -50,8 +50,10 @@ class Game {
         std::unique_ptr<ShadowRenderer> m_shadowRenderer;
         
         World m_world{};
-
         Player m_player{};
 
         void loadResources();
+        void loadShaders();
+        void loadRenderers();
+        void loadEntities();
 };

@@ -13,7 +13,8 @@ Entity& ModelLoader::LoadModelIntoWorld(
     World& world, 
     const std::string& path,
     Shader& shader,
-    bool skipMaterials, 
+    bool skipMaterials,
+    bool cacheVertexData,
     Entity* parent,
     std::vector<AnimationClip>* outAnimations
 ) {
@@ -52,6 +53,7 @@ Entity& ModelLoader::LoadModelIntoWorld(
             path,
             shader,
             skipMaterials,
+            cacheVertexData,
             nodeToEntity,
             skinnedMeshEntities
         );
@@ -82,7 +84,8 @@ void ModelLoader::attachMeshAndMaterial(
     const std::string& baseDir, 
     Shader& shader,
     const std::string& meshCacheKey,
-    bool skipMaterials
+    bool skipMaterials,
+    bool cacheVertexData
 ) {
     auto cachedMesh = AssetManager<Mesh>::TryGet(meshCacheKey);
     if (cachedMesh) {
@@ -175,6 +178,7 @@ void ModelLoader::attachMeshAndMaterial(
         }
 
         auto mesh = std::make_shared<Mesh>(vertices, indices);
+        if (cacheVertexData) mesh->CacheVertexData(vertices);
         AssetManager<Mesh>::Store(meshCacheKey, mesh);
         entity.SetMesh(mesh);
     }
@@ -378,6 +382,7 @@ void ModelLoader::createNodeEntity(
     const std::string& path,
     Shader& shader,
     bool skipMaterials,
+    bool cacheVertexData,
     std::unordered_map<size_t, Entity*>& nodeToEntity,
     std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
 ) {
@@ -417,7 +422,16 @@ void ModelLoader::createNodeEntity(
                 : world.CreateEntity(name + "_part" + std::to_string(i), &entity);
 
             std::string meshCacheKey = path + "#mesh" + std::to_string(*node.meshIndex) + "#prim" + std::to_string(i);
-            attachMeshAndMaterial(target, asset, mesh.primitives[i], baseDir, shader, meshCacheKey, skipMaterials);
+            attachMeshAndMaterial(
+                target,
+                asset, 
+                mesh.primitives[i],
+                baseDir, 
+                shader, 
+                meshCacheKey, 
+                skipMaterials, 
+                cacheVertexData
+            );
 
             if (node.skinIndex.has_value()) skinnedMeshEntities[nodeIndex].push_back(&target);
         }
@@ -433,6 +447,7 @@ void ModelLoader::createNodeEntity(
             path, 
             shader,
             skipMaterials,
+            cacheVertexData,
             nodeToEntity,
             skinnedMeshEntities
         );

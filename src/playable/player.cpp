@@ -54,8 +54,8 @@ void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
     if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS) direction -= right;
 
     if (m_noclip) {
-        if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS) direction += m_camera.GetUp();
-        if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) direction -= m_camera.GetUp();
+        if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS) direction += m_camera.GetWorldUp();
+        if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) direction -= m_camera.GetWorldUp();
     }
 
     bool isMoving = glm::length(direction) > 0.0f;
@@ -90,8 +90,8 @@ void Player::ProcessInput(GLFWwindow* glfwWindow, float deltatime) {
 
     float speed;
     switch (m_state) {
-        case MovementState::Sprinting: speed = m_properties.SprintSpeed; break;
-        case MovementState::Walking: speed = m_properties.WalkSpeed; break;
+        case MovementState::Sprinting: speed = !IsNoclip() ? m_properties.SprintSpeed : m_properties.NoClipSprintSpeed; break;
+        case MovementState::Walking: speed = !IsNoclip() ? m_properties.WalkSpeed : m_properties.NoClipWalkSpeed; break;
         default: speed = 0.0f; break;
     }
 

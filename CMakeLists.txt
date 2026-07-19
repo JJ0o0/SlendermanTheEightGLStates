@@ -49,6 +49,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     "src/playable/flashlight.cpp"
     "src/playable/player.cpp"
     "src/playable/entity.cpp"
+    "src/playable/tree_spawner.cpp"
 
     "src/external/tinyfiledialogs.c"
     "src/external/gl.c"

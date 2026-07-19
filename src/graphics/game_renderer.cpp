@@ -31,7 +31,7 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
 }
 
 void GameRenderer::DrawDepth(const World& world, Shader& shader) {
-    shader.SetBool("uInstanced", false);
+    if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", false);
 
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
@@ -47,13 +47,13 @@ void GameRenderer::DrawDepth(const World& world, Shader& shader) {
         material->UnbindDepth(shader);
     }
 
-    shader.SetBool("uInstanced", true);
+    if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", true);
         for (auto& batch : m_instancedBatches) {
             batch.MaterialReference->BindDepth(shader);
                 batch.MeshReference->DrawInstanced();
             batch.MaterialReference->UnbindDepth(shader);
         }
-    shader.SetBool("uInstanced", false);
+    if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", false);
 }
 
 void GameRenderer::AddInstancedBatch(
@@ -81,7 +81,7 @@ void GameRenderer::drawScene(
 
         shader.Bind();
             shader.SetBool("uUnlit", m_unlit);
-            shader.SetBool("uInstanced", false);
+            if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", false);
 
             setCameraUniforms(shader, player);
             setLightUniforms(shader, flashlight);
@@ -106,7 +106,7 @@ void GameRenderer::drawScene(
 
         shader.Bind();
             shader.SetBool("uUnlit", m_unlit);
-            shader.SetBool("uInstanced", true);
+            if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", true);
 
             setCameraUniforms(shader, player);
             setLightUniforms(shader, flashlight);

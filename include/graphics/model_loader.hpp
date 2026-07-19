@@ -18,6 +18,7 @@ class ModelLoader {
             const std::string& path, 
             Shader& shader,
             bool skipMaterials = false,
+            bool cacheVertexData = false,
             Entity* parent = nullptr,
             std::vector<AnimationClip>* outAnimations = nullptr
         );
@@ -29,7 +30,8 @@ class ModelLoader {
             const std::string& baseDir, 
             Shader& shader,
             const std::string& meshCacheKey,
-            bool skipMaterials
+            bool skipMaterials,
+            bool cacheVertexData
         );
 
         static Skeleton parseSkin(
@@ -56,6 +58,7 @@ class ModelLoader {
             const std::string& path,
             Shader& shader,
             bool skipMaterials,
+            bool cacheVertexData,
             std::unordered_map<size_t, Entity*>& nodeToEntity,
             std::unordered_map<size_t, std::vector<Entity*>>& skinnedMeshEntities
         );

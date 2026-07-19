@@ -57,7 +57,8 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& ind
 
 Mesh::Mesh(Mesh&& other) noexcept
     : m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo), m_instanceVbo(other.m_instanceVbo), 
-      m_indexCount(other.m_indexCount), m_instanceCount(other.m_instanceCount) {
+      m_indexCount(other.m_indexCount), m_instanceCount(other.m_instanceCount),
+      m_cachedPositions(std::move(other.m_cachedPositions)), m_cachedColors(std::move(other.m_cachedColors)) {
     other.m_vao = 0;
     other.m_vbo = 0;
     other.m_ebo = 0;
@@ -80,6 +81,8 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
     m_instanceVbo = other.m_instanceVbo;
     m_indexCount = other.m_indexCount;
     m_instanceCount = other.m_instanceCount;
+    m_cachedPositions = std::move(other.m_cachedPositions);
+    m_cachedColors = std::move(other.m_cachedColors);
 
     other.m_vao = 0;
     other.m_vbo = 0;
@@ -87,6 +90,8 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
     other.m_instanceVbo = 0;
     other.m_indexCount = 0;
     other.m_instanceCount = 0;
+    other.m_cachedPositions.clear();
+    other.m_cachedColors.clear();
 
     return *this;
 }
@@ -96,6 +101,16 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_instanceVbo);
     glDeleteVertexArrays(1, &m_vao);
+}
+
+void Mesh::CacheVertexData(const std::vector<Vertex>& vertices) {
+    m_cachedPositions.reserve(vertices.size());
+    m_cachedColors.reserve(vertices.size());
+
+    for (const Vertex& v : vertices) {
+        m_cachedPositions.push_back(v.Position);
+        m_cachedColors.push_back(v.Color);
+    }
 }
 
 void Mesh::SetupInstancing(const std::vector<glm::mat4>& matrices) {
@@ -135,4 +150,24 @@ void Mesh::DrawInstanced() const {
 
     glBindVertexArray(m_vao);
     glDrawElementsInstanced(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr, m_instanceCount);
+}
+
+glm::vec4 Mesh::GetNearestCachedColor(const glm::vec3& localPosition) const {
+    if (m_cachedPositions.empty()) return glm::vec4(0.0f);
+
+    float nearestDistanceSquared = std::numeric_limits<float>::max();
+    int nearestIndex = -1;
+
+    for (int i = 0; i < m_cachedPositions.size(); i++) {
+        float dx = localPosition.x - m_cachedPositions[i].x;
+        float dz = localPosition.z - m_cachedPositions[i].z;
+        float distanceSquared = (dx * dx) + (dz * dz);
+
+        if (distanceSquared < nearestDistanceSquared) {
+            nearestDistanceSquared = distanceSquared;
+            nearestIndex = i;
+        }
+    }
+
+    return m_cachedColors[nearestIndex];
 }

@@ -29,7 +29,7 @@ struct CameraProperties {
     float FieldOfView = 90.0f;
     float AspectRatio = 4.0f / 3.0f;
     float NearPlane = 0.1f;
-    float FarPlane = 100.0f;
+    float FarPlane = 10000.0f;
 
     float SprintFOVBoost = 4.0f;
     float SprintStartFOVBoost = 10.0f;
@@ -53,6 +53,7 @@ class Camera {
 
         glm::vec3 GetFront() const { return m_front; }
         glm::vec3 GetUp() const { return glm::cross(GetRight(), m_front); }
+        glm::vec3 GetWorldUp() const { return m_up; }
         glm::vec3 GetRight() const;
         glm::mat4 GetViewMatrix(glm::vec3 position);
         glm::mat4 GetProjectionMatrix() const;

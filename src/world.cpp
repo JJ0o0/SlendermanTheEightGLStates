@@ -13,6 +13,7 @@ Entity& World::CreateEntity(const std::string& name, Entity* parent) {
 
 bool World::CheckCollision(const AABB& collider) const {
     for (const auto& entity : m_entities) {
+        if (entity->IsInstanced()) continue;
         if (!entity->HasCollider()) continue;
         if (collider.Intersects(entity->GetColliderAABB())) return true;
     }
@@ -25,6 +26,7 @@ std::optional<RaycastHit> World::Raycast(const glm::vec3& origin, const glm::vec
 
     for (const auto& entity : m_entities) {
         if (entity.get() == ignore) continue;
+        if (entity->IsInstanced()) continue;
 
         std::optional<AABB> bounds;
 

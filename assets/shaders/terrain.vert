@@ -12,6 +12,7 @@ out mat3 TBN;
 out vec4 FragPosLightSpace;
 out vec4 VertexColor;
 
+uniform bool uInstanced;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;

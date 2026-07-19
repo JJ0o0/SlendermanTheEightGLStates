@@ -22,12 +22,13 @@ class Shader {
         void SetMat4(const std::string& name, const glm::mat4& value);
         void SetMat4Array(const std::string& name, const std::vector<glm::mat4>& values);
 
-        bool UniformExists(const std::string& name) { return getUniformLocation(name) != -1; }
+        bool UniformExists(const std::string& name) { return getUniformLocationSilent(name) != -1; }
     private:
         uint32_t m_id = 0;
         uint32_t m_fragment = 0;
 
         int getUniformLocation(const std::string& name);
+        int getUniformLocationSilent(const std::string& name);
         bool verifyShader(uint32_t shader, bool isProgram);
         std::string readFile(const std::string& path);
 };

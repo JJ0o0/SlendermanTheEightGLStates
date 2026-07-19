@@ -16,11 +16,16 @@ class Mesh {
         Mesh(Mesh&& other) noexcept;
         Mesh& operator=(Mesh&& other) noexcept;
 
+        void CacheVertexData(const std::vector<Vertex>& vertices);
+        bool HasCachedVertexData() const { return !m_cachedPositions.empty(); }
+
         void SetupInstancing(const std::vector<glm::mat4>& matrices);
         bool IsInstanced() const { return m_instanceVbo != 0; }
 
         void Draw() const;
         void DrawInstanced() const;
+
+        glm::vec4 GetNearestCachedColor(const glm::vec3& localPosition) const;
 
         // NÃO É COLISÃO! São dados dos vertíces para outros fins além de colisão.
         const AABB& GetLocalBounds() const { return m_localBounds; }
@@ -34,4 +39,7 @@ class Mesh {
 
         size_t m_indexCount = 0;
         size_t m_instanceCount = 0;
+
+        std::vector<glm::vec3> m_cachedPositions;
+        std::vector<glm::vec4> m_cachedColors;
 };

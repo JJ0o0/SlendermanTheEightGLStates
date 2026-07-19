@@ -76,7 +76,7 @@ class Entity {
     private:
         std::string m_name;
         bool m_instanced = false;
-        
+
         std::shared_ptr<Mesh> m_mesh;
         std::shared_ptr<Material> m_material;
         Transform m_transform{};
