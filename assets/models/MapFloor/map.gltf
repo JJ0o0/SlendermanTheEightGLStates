@@ -1,6 +1,6 @@
 {
 	"asset":{
-		"generator":"Khronos glTF Blender I/O v5.1.20",
+		"generator":"Khronos glTF Blender I/O v5.2.39",
 		"version":"2.0"
 	},
 	"scene":0,
@@ -15,11 +15,11 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"MapPlane",
+			"name":"Plane",
 			"scale":[
-				160,
+				200,
 				1,
-				95
+				200
 			]
 		}
 	],
@@ -44,92 +44,92 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":9933,
+			"count":40432,
 			"max":[
-				1.0000001192092896,
+				1,
 				0,
-				1.0000001192092896
+				1
 			],
 			"min":[
-				-1.0000001192092896,
+				-1,
 				0,
-				-1.0000001192092896
+				-1
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":9933,
+			"count":40432,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":9933,
+			"count":40432,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5126,
-			"count":9933,
+			"count":40432,
 			"type":"VEC4"
 		},
 		{
 			"bufferView":4,
 			"componentType":5123,
-			"count":9933,
+			"count":40432,
 			"normalized":true,
 			"type":"VEC4"
 		},
 		{
 			"bufferView":5,
 			"componentType":5123,
-			"count":58368,
+			"count":240000,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":119196,
+			"byteLength":485184,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":119196,
-			"byteOffset":119196,
+			"byteLength":485184,
+			"byteOffset":485184,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":79464,
-			"byteOffset":238392,
+			"byteLength":323456,
+			"byteOffset":970368,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":158928,
-			"byteOffset":317856,
+			"byteLength":646912,
+			"byteOffset":1293824,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":79464,
-			"byteOffset":476784,
+			"byteLength":323456,
+			"byteOffset":1940736,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":116736,
-			"byteOffset":556248,
+			"byteLength":480000,
+			"byteOffset":2264192,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":672984,
+			"byteLength":2744192,
 			"uri":"map.bin"
 		}
 	]

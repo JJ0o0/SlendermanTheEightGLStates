@@ -226,13 +226,13 @@ void Game::loadEntities() {
     auto& floorTransform = floor.GetTransform();
     floorTransform.Position.y = -1.0f;
 
-    floor.SetCollider(Collider({320.0f, 0.1f, 190.0f}));
+    floor.SetCollider(Collider({400.0f, 0.1f, 400.0f}));
 
     // TREE INITIALIZATION
     auto tree01 = TreeSpawner::LoadSpecies(m_world, *m_defaultShader, "assets/models/Tree01/Tree01.gltf",
     [](const std::string& name) { return name.find("Branches") != std::string::npos; });
 
-    TreeSpawner::Scatter(m_world, *m_renderer, floor, tree01, 500, 1.5f, 20000);
+    TreeSpawner::Scatter(m_world, *m_renderer, floor, tree01, 5000, 1.5f, 20000);
 }
 
 void Game::loadResources() {
