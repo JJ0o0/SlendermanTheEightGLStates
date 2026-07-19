@@ -22,7 +22,7 @@ class GameRenderer {
             const glm::vec3& cullCenter = glm::vec3(0.0f), float cullRadius = std::numeric_limits<float>::max()
         );
 
-        static constexpr float RenderCullDistance = 20.0f;
+        static constexpr float RenderCullDistance = 10.0f;
 
         void ToggleShowColliders() { m_showColliders = !m_showColliders; }
         void SetShowColliders(bool showColliders) { m_showColliders = showColliders; }

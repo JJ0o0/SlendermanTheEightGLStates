@@ -50,6 +50,9 @@ void Game::Initialize() {
             case GLFW_KEY_F8:
                 m_timeStop = !m_timeStop;
                 break;
+            case GLFW_KEY_V:
+                m_window.ToggleVsync();
+                break;
             case GLFW_KEY_N:
                 m_player.ToggleNoclip();
                 break;

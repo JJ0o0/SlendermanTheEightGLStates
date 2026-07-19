@@ -24,6 +24,9 @@ class Window {
         void Close() const { glfwSetWindowShouldClose(m_handle, true); }
         bool ShouldClose() const { return glfwWindowShouldClose(m_handle); }
 
+        void ToggleVsync() { m_properties.VSync = !m_properties.VSync; glfwSwapInterval(m_properties.VSync);}
+        bool IsVsyncOn() const { return m_properties.VSync; }
+
         void ToggleLockMouse() { glfwSetInputMode(m_handle, GLFW_CURSOR, IsMouseLocked() ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED); }
         bool IsMouseLocked() const { return glfwGetInputMode(m_handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED; }
 
