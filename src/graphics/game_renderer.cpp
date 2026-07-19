@@ -48,7 +48,12 @@ void GameRenderer::DrawDepth(const World& world, Shader& shader) {
     }
 
     if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", true);
+        constexpr float shadowCullDistance = RenderCullDistance + 20.0f;
+
         for (auto& batch : m_instancedBatches) {
+            float distanceToCamera = glm::length(m_lastCameraPosition - batch.CullCenter);
+            if (distanceToCamera > batch.CullRadius + shadowCullDistance) continue;
+
             batch.MaterialReference->BindDepth(shader);
                 batch.MeshReference->DrawInstanced();
             batch.MaterialReference->UnbindDepth(shader);
@@ -59,10 +64,12 @@ void GameRenderer::DrawDepth(const World& world, Shader& shader) {
 void GameRenderer::AddInstancedBatch(
     const std::shared_ptr<Mesh>& mesh,
     const std::shared_ptr<Material>& material,
-    const std::vector<glm::mat4>& transforms
+    const std::vector<glm::mat4>& transforms,
+    const glm::vec3& cullCenter,
+    float cullRadius
 ) {
     mesh->SetupInstancing(transforms);
-    m_instancedBatches.push_back({ mesh, material });
+    m_instancedBatches.push_back({ mesh, material, cullCenter, cullRadius });
 }
 
 void GameRenderer::drawScene(
@@ -72,6 +79,8 @@ void GameRenderer::drawScene(
     const glm::mat4& lightSpaceMatrix,
     uint32_t shadowMap
 ) {
+    m_lastCameraPosition = player.GetEyePosition();
+
     for (auto& entity : world.GetEntities()) {
         if (!entity->GetMesh()) continue;
         if (entity->IsInstanced()) continue;
@@ -102,6 +111,9 @@ void GameRenderer::drawScene(
     }
 
     for (auto& batch : m_instancedBatches) {
+        float distanceToCamera = glm::length(m_lastCameraPosition - batch.CullCenter);
+        if (distanceToCamera > batch.CullRadius + RenderCullDistance) continue;
+
         Shader& shader = batch.MaterialReference->GetShader();
 
         shader.Bind();

@@ -228,9 +228,9 @@ vec3 gammaCorrection(vec3 color) {
 }
 
 vec3 applyFog(vec3 color) {
-    vec3 fogColor = vec3(0.01, 0.01, 0.015);
+    vec3 fogColor = vec3(0.02, 0.02, 0.02);
     float dist = length(uCameraPosition - WorldPos);
-    float fog = exp(-dist * 0.08);
+    float fog = exp(-dist * 0.10);
 
     fog = clamp(fog, 0.0, 1.0);
     return mix(fogColor, color, fog);

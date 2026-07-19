@@ -232,7 +232,7 @@ void Game::loadEntities() {
     auto tree01 = TreeSpawner::LoadSpecies(m_world, *m_defaultShader, "assets/models/Tree01/Tree01.gltf",
     [](const std::string& name) { return name.find("Branches") != std::string::npos; });
 
-    TreeSpawner::Scatter(m_world, *m_renderer, floor, tree01, 5000, 1.5f, 20000);
+    TreeSpawner::Scatter(m_world, *m_renderer, floor, tree01, 6000, 0.5f, 20000);
 }
 
 void Game::loadResources() {

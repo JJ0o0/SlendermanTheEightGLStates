@@ -14,7 +14,13 @@ class GameRenderer {
 
         void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
         void DrawDepth(const World& world, Shader& shader);
-        void AddInstancedBatch(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material, const std::vector<glm::mat4>& transforms);
+        void AddInstancedBatch(
+            const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material, 
+            const std::vector<glm::mat4>& transforms,
+            const glm::vec3& cullCenter = glm::vec3(0.0f), float cullRadius = std::numeric_limits<float>::max()
+        );
+
+        static constexpr float RenderCullDistance = 55.0f;
 
         void ToggleShowColliders() { m_showColliders = !m_showColliders; }
         void SetShowColliders(bool showColliders) { m_showColliders = showColliders; }
@@ -32,6 +38,7 @@ class GameRenderer {
         std::unique_ptr<Mesh> m_debugCubeMesh;
         
         std::vector<InstancedBatch> m_instancedBatches;
+        glm::vec3 m_lastCameraPosition{0.0f};
 
         bool m_unlit = false;
         bool m_wireframe = false;

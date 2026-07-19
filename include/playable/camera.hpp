@@ -29,7 +29,7 @@ struct CameraProperties {
     float FieldOfView = 90.0f;
     float AspectRatio = 4.0f / 3.0f;
     float NearPlane = 0.1f;
-    float FarPlane = 10000.0f;
+    float FarPlane = 100.0f;
 
     float SprintFOVBoost = 4.0f;
     float SprintStartFOVBoost = 10.0f;

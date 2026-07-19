@@ -6,6 +6,45 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <unordered_map>
+#include <cmath>
+
+namespace {
+    // Grid espacial usado só pelo Scatter.
+    struct SpatialGrid {
+        float cellSize;
+        std::unordered_map<int64_t, std::vector<glm::vec3>> cells;
+
+        explicit SpatialGrid(float cellSize) : cellSize(cellSize) {}
+
+        static int64_t Key(int x, int z) {
+            return (int64_t(x) << 32) | uint32_t(z);
+        }
+
+        glm::ivec2 CellOf(const glm::vec3& p) const {
+            return { (int)std::floor(p.x / cellSize), (int)std::floor(p.z / cellSize) };
+        }
+
+        bool IsTooClose(const glm::vec3& candidate, float minSpacingSq) const {
+            glm::ivec2 c = CellOf(candidate);
+            for (int dx = -1; dx <= 1; ++dx)
+                for (int dz = -1; dz <= 1; ++dz) {
+                    auto it = cells.find(Key(c.x + dx, c.y + dz));
+                    if (it == cells.end()) continue;
+                    for (const auto& p : it->second) {
+                        float ddx = candidate.x - p.x, ddz = candidate.z - p.z;
+                        if (ddx * ddx + ddz * ddz < minSpacingSq) return true;
+                    }
+                }
+            return false;
+        }
+
+        void Insert(const glm::vec3& p) {
+            glm::ivec2 c = CellOf(p);
+            cells[Key(c.x, c.y)].push_back(p);
+        }
+    };
+}
 
 TreeSpawner::SpeciesAssets TreeSpawner::LoadSpecies(
     World& world, Shader& shader, 
@@ -47,9 +86,13 @@ void TreeSpawner::Scatter(
     int count, float minimumSpacing, int maxAttempts
 ) {
     std::vector<glm::mat4> transforms;
-    std::vector<glm::vec3> acceptedPositions;
+    transforms.reserve(count);
 
     AABB groundBounds = ground.GetColliderAABB();
+    float groundY = groundBounds.Maximum.y;
+
+    SpatialGrid grid(minimumSpacing);
+    float minSpacingSq = minimumSpacing * minimumSpacing;
 
     std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> xDist(groundBounds.Minimum.x, groundBounds.Maximum.x);
@@ -61,28 +104,14 @@ void TreeSpawner::Scatter(
     while ((int)transforms.size() < count && attempts < maxAttempts) {
         attempts++;
 
-        glm::vec3 candidate{ xDist(rng), 0.0f, zDist(rng) };
+        glm::vec3 candidate{ xDist(rng), groundY, zDist(rng) };
         if (!TerrainUtilities::IsGrassAt(ground, candidate)) continue;
-
-        bool tooClose = false;
-        for (const auto& accepted : acceptedPositions) {
-            float dx = candidate.x - accepted.x;
-            float dz = candidate.z - accepted.z;
-            if (dx * dx + dz * dz < minimumSpacing * minimumSpacing) { tooClose = true; break; }
-        }
-
-        if (tooClose) continue;
-
-        glm::vec3 rayOrigin = candidate;
-        rayOrigin.y = groundBounds.Maximum.y + 5.0f;
-
-        auto hit = world.Raycast(rayOrigin, glm::vec3(0.0f, -1.0f, 0.0f), 100.0f, false);
-        if (!hit.has_value()) continue;
+        if (grid.IsTooClose(candidate, minSpacingSq)) continue;
 
         float scale = scaleDist(rng);
-        
+
         Transform transform;
-        transform.Position = hit->Point + glm::vec3(0.0f, asset.GroundOffset * scale, 0.0f);
+        transform.Position = candidate + glm::vec3(0.0f, asset.GroundOffset * scale, 0.0f);
         transform.RotateEuler({ 0.0f, rotDist(rng), 0.0f });
         transform.Scale = glm::vec3(scale);
 
@@ -92,14 +121,44 @@ void TreeSpawner::Scatter(
         if (asset.CollisionShape.has_value()) ghostCollider.SetCollider(*asset.CollisionShape);
 
         transforms.push_back(transform.GetModel());
-        acceptedPositions.push_back(hit->Point);
+        grid.Insert(candidate);
     }
 
     std::cout << "Generated " << transforms.size() << " trees in " << attempts << " tries.\n";
 
-    for (const auto& part : asset.Parts) {
-        if (part.MeshReference && part.MaterialReference) { 
-            renderer.AddInstancedBatch(part.MeshReference, part.MaterialReference, transforms); 
+    constexpr float kChunkSize = 50.0f;
+    const float kChunkBoundingRadius = kChunkSize * 0.70711f;
+
+    struct ChunkBucket {
+        glm::vec3 Center{0.0f};
+        std::vector<glm::mat4> Transforms;
+    };
+
+    std::unordered_map<int64_t, ChunkBucket> chunks;
+
+    for (const auto& m : transforms) {
+        glm::vec3 pos = glm::vec3(m[3]);
+
+        int cx = (int)std::floor(pos.x / kChunkSize);
+        int cz = (int)std::floor(pos.z / kChunkSize);
+        int64_t key = (int64_t(cx) << 32) | uint32_t(cz);
+
+        auto& bucket = chunks[key];
+        if (bucket.Transforms.empty()) {
+            bucket.Center = glm::vec3((cx + 0.5f) * kChunkSize, groundY, (cz + 0.5f) * kChunkSize);
+        }
+        bucket.Transforms.push_back(m);
+    }
+
+    for (const auto& entry : chunks) {
+        const auto& bucket = entry.second;
+        for (const auto& part : asset.Parts) {
+            if (part.MeshReference && part.MaterialReference) {
+                renderer.AddInstancedBatch(
+                    part.MeshReference, part.MaterialReference, bucket.Transforms,
+                    bucket.Center, kChunkBoundingRadius
+                );
+            }
         }
     }
 }
