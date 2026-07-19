@@ -84,7 +84,7 @@ void Game::Render() {
     glViewport(0,0,m_window.GetProperties().Width, m_window.GetProperties().Height);
 
     m_skyboxRenderer->Render(m_player);
-    m_renderer->Render(m_world, m_player, m_player.GetFlashlight(), m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap());
+    m_renderer->Render(m_world, m_player, m_player.GetFlashlight(), m_shadowRenderer->GetLightSpaceMatrix(), m_shadowRenderer->GetShadowMap(), *m_skyboxCubemap);
 }
 
 void Game::RenderDebugUI() {

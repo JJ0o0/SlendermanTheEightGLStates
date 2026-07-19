@@ -46,6 +46,8 @@ uniform sampler2D uDirtAlbedoMap;
 uniform sampler2D uDirtNormalMap;
 uniform sampler2D uDirtARMMap;
 
+uniform samplerCube uSkybox;
+
 uniform sampler2D uFlashlightCookie;
 uniform sampler2D uShadowMap;
 
@@ -269,11 +271,18 @@ vec3 gammaCorrection(vec3 color) {
 }
 
 vec3 applyFog(vec3 color) {
-    vec3 fogColor = vec3(0.01, 0.01, 0.015);
-    float dist = length(uCameraPosition - WorldPos);
-    float fog = exp(-dist * 0.08);
+    vec3 viewDir = normalize(WorldPos - uCameraPosition);
+    vec3 fogColor = texture(uSkybox, viewDir).rgb;
+    fogColor *= 0.01;
 
+    float dist = length(uCameraPosition - WorldPos);
+
+    float fogStart = 15.0;
+    float fogDensity = 0.05;
+
+    float fog = exp(-max(dist - fogStart, 0.0) * fogDensity);
     fog = clamp(fog, 0.0, 1.0);
+
     return mix(fogColor, color, fog);
 }
 

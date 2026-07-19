@@ -10,6 +10,9 @@ struct InstancedBatch {
     std::shared_ptr<Mesh> MeshReference;
     std::shared_ptr<Material> MaterialReference;
 
+    Mesh::InstancedVAOHandle VaoHandle;
+    size_t IndexCount = 0;
+
     glm::vec3 CullCenter{0.0f};
-    float CullRadius = std::numeric_limits<float>::max(); // sem culling por padrão
+    float CullRadius = std::numeric_limits<float>::max();
 };

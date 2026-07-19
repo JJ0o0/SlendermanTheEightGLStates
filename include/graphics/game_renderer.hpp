@@ -4,6 +4,7 @@
 #include <playable/flashlight.hpp>
 #include <playable/player.hpp>
 #include <graphics/shader.hpp>
+#include <graphics/cubemap.hpp>
 #include <graphics/mesh.hpp>
 #include <graphics/materials/pbr_material.hpp>
 #include <graphics/instanced_batch.hpp>
@@ -11,8 +12,9 @@
 class GameRenderer {
     public:
         GameRenderer();
+        ~GameRenderer();
 
-        void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap);
+        void Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap, const Cubemap& skybox);
         void DrawDepth(const World& world, Shader& shader);
         void AddInstancedBatch(
             const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material, 
@@ -20,7 +22,7 @@ class GameRenderer {
             const glm::vec3& cullCenter = glm::vec3(0.0f), float cullRadius = std::numeric_limits<float>::max()
         );
 
-        static constexpr float RenderCullDistance = 55.0f;
+        static constexpr float RenderCullDistance = 20.0f;
 
         void ToggleShowColliders() { m_showColliders = !m_showColliders; }
         void SetShowColliders(bool showColliders) { m_showColliders = showColliders; }
@@ -49,7 +51,8 @@ class GameRenderer {
             Player& player,
             Flashlight& flashlight,
             const glm::mat4& lightSpaceMatrix,
-            uint32_t shadowMap
+            uint32_t shadowMap, 
+            const Cubemap& skybox
         );
 
         void drawColliders(const World& world, Player& player);

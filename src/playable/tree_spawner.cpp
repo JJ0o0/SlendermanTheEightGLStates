@@ -144,9 +144,11 @@ void TreeSpawner::Scatter(
         int64_t key = (int64_t(cx) << 32) | uint32_t(cz);
 
         auto& bucket = chunks[key];
+        
         if (bucket.Transforms.empty()) {
             bucket.Center = glm::vec3((cx + 0.5f) * kChunkSize, groundY, (cz + 0.5f) * kChunkSize);
         }
+
         bucket.Transforms.push_back(m);
     }
 

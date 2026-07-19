@@ -12,7 +12,13 @@ GameRenderer::GameRenderer() {
     m_debugCubeMesh = std::make_unique<Mesh>(CreateCube());
 }
 
-void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap) {
+GameRenderer::~GameRenderer() {
+    for (auto& batch : m_instancedBatches) {
+        Mesh::DestroyInstancedVAO(batch.VaoHandle);
+    }
+}
+
+void GameRenderer::Render(const World& world, Player& player, Flashlight& flashlight, const glm::mat4& lightSpaceMatrix, uint32_t shadowMap, const Cubemap& skybox) {
     if (m_wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     flashlight.Bind(3);
@@ -21,7 +27,8 @@ void GameRenderer::Render(const World& world, Player& player, Flashlight& flashl
         player,
         flashlight,
         lightSpaceMatrix,
-        shadowMap
+        shadowMap,
+        skybox
     );
     flashlight.Unbind();
 
@@ -55,7 +62,7 @@ void GameRenderer::DrawDepth(const World& world, Shader& shader) {
             if (distanceToCamera > batch.CullRadius + shadowCullDistance) continue;
 
             batch.MaterialReference->BindDepth(shader);
-                batch.MeshReference->DrawInstanced();
+                Mesh::DrawInstancedVAO(batch.VaoHandle, batch.IndexCount);
             batch.MaterialReference->UnbindDepth(shader);
         }
     if (shader.UniformExists("uInstanced")) shader.SetBool("uInstanced", false);
@@ -68,8 +75,15 @@ void GameRenderer::AddInstancedBatch(
     const glm::vec3& cullCenter,
     float cullRadius
 ) {
-    mesh->SetupInstancing(transforms);
-    m_instancedBatches.push_back({ mesh, material, cullCenter, cullRadius });
+    InstancedBatch batch;
+    batch.MeshReference = mesh;
+    batch.MaterialReference = material;
+    batch.VaoHandle = mesh->CreateInstancedVAO(transforms);
+    batch.IndexCount = mesh->GetIndexCount();
+    batch.CullCenter = cullCenter;
+    batch.CullRadius = cullRadius;
+
+    m_instancedBatches.push_back(batch);
 }
 
 void GameRenderer::drawScene(
@@ -77,7 +91,8 @@ void GameRenderer::drawScene(
     Player& player,
     Flashlight& flashlight,
     const glm::mat4& lightSpaceMatrix,
-    uint32_t shadowMap
+    uint32_t shadowMap, 
+    const Cubemap& skybox
 ) {
     m_lastCameraPosition = player.GetEyePosition();
 
@@ -100,6 +115,9 @@ void GameRenderer::drawScene(
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, shadowMap);
             shader.SetInt("uShadowMap", 4);
+
+            skybox.Bind(11);
+            shader.SetInt("uSkybox", 11);
 
             if (entity->HasSkeleton()) shader.SetMat4Array("uBoneMatrices", entity->GetSkeleton()->GetSkinningMatrices());
 
@@ -129,8 +147,11 @@ void GameRenderer::drawScene(
             glBindTexture(GL_TEXTURE_2D, shadowMap);
             shader.SetInt("uShadowMap", 4);
 
+            skybox.Bind(11);
+            shader.SetInt("uSkybox", 11);
+
             batch.MaterialReference->Bind();
-                batch.MeshReference->DrawInstanced();
+                Mesh::DrawInstancedVAO(batch.VaoHandle, batch.IndexCount);
             batch.MaterialReference->Unbind();
         shader.Unbind();
     }

@@ -3,6 +3,29 @@
 #include <cstddef>
 #include <limits>
 
+void Mesh::setupVertexAttributes() {
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoord));
+    glEnableVertexAttribArray(2);
+
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+    glEnableVertexAttribArray(3);
+
+    glVertexAttribIPointer(4, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, JointIndices));
+    glEnableVertexAttribArray(4);
+
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, JointWeights));
+    glEnableVertexAttribArray(5);
+
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color));
+    glEnableVertexAttribArray(6);
+}
+
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
     : m_indexCount(indices.size()) {
     m_localBounds.Minimum = glm::vec3{std::numeric_limits<float>::max()};
@@ -24,47 +47,19 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& ind
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
-    // Position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-    glEnableVertexAttribArray(0);
-
-    // Normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-    glEnableVertexAttribArray(1);
-
-    // TexCoord
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoord));
-    glEnableVertexAttribArray(2);
-
-    // Tangent
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-    glEnableVertexAttribArray(3);
-
-    // Joint Indices
-    glVertexAttribIPointer(4, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, JointIndices));
-    glEnableVertexAttribArray(4);
-
-    // Joint Weights
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, JointWeights));
-    glEnableVertexAttribArray(5);
-
-    // Color
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color));
-    glEnableVertexAttribArray(6);
+    setupVertexAttributes();
 
     glBindVertexArray(0);
 }
 
 Mesh::Mesh(Mesh&& other) noexcept
-    : m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo), m_instanceVbo(other.m_instanceVbo), 
-      m_indexCount(other.m_indexCount), m_instanceCount(other.m_instanceCount),
+    : m_vao(other.m_vao), m_vbo(other.m_vbo), m_ebo(other.m_ebo), 
+      m_indexCount(other.m_indexCount),
       m_cachedPositions(std::move(other.m_cachedPositions)), m_cachedColors(std::move(other.m_cachedColors)) {
     other.m_vao = 0;
     other.m_vbo = 0;
     other.m_ebo = 0;
-    other.m_instanceVbo = 0;
     other.m_indexCount = 0;
-    other.m_instanceCount = 0;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept {
@@ -72,24 +67,19 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
 
     glDeleteBuffers(1, &m_ebo);
     glDeleteBuffers(1, &m_vbo);
-    glDeleteBuffers(1, &m_instanceVbo);
     glDeleteVertexArrays(1, &m_vao);
 
     m_vao = other.m_vao;
     m_vbo = other.m_vbo;
     m_ebo = other.m_ebo;
-    m_instanceVbo = other.m_instanceVbo;
     m_indexCount = other.m_indexCount;
-    m_instanceCount = other.m_instanceCount;
     m_cachedPositions = std::move(other.m_cachedPositions);
     m_cachedColors = std::move(other.m_cachedColors);
 
     other.m_vao = 0;
     other.m_vbo = 0;
     other.m_ebo = 0;
-    other.m_instanceVbo = 0;
     other.m_indexCount = 0;
-    other.m_instanceCount = 0;
     other.m_cachedPositions.clear();
     other.m_cachedColors.clear();
 
@@ -99,7 +89,6 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
 Mesh::~Mesh() {
     glDeleteBuffers(1, &m_ebo);
     glDeleteBuffers(1, &m_vbo);
-    glDeleteBuffers(1, &m_instanceVbo);
     glDeleteVertexArrays(1, &m_vao);
 }
 
@@ -113,15 +102,21 @@ void Mesh::CacheVertexData(const std::vector<Vertex>& vertices) {
     }
 }
 
-void Mesh::SetupInstancing(const std::vector<glm::mat4>& matrices) {
-    if (m_vao == 0) return;
+Mesh::InstancedVAOHandle Mesh::CreateInstancedVAO(const std::vector<glm::mat4>& matrices) const {
+    InstancedVAOHandle handle;
+    if (m_vao == 0) return handle;
 
-    m_instanceCount = matrices.size();
+    handle.InstanceCount = matrices.size();
 
-    glBindVertexArray(m_vao);
+    glGenVertexArrays(1, &handle.Vao);
+    glBindVertexArray(handle.Vao);
 
-    glGenBuffers(1, &m_instanceVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_instanceVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+    setupVertexAttributes();
+
+    glGenBuffers(1, &handle.InstanceVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, handle.InstanceVbo);
     glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), matrices.data(), GL_STATIC_DRAW);
 
     for (int i = 0; i < 4; i++) {
@@ -136,6 +131,20 @@ void Mesh::SetupInstancing(const std::vector<glm::mat4>& matrices) {
     }
 
     glBindVertexArray(0);
+    return handle;
+}
+
+void Mesh::DrawInstancedVAO(const InstancedVAOHandle& handle, size_t indexCount) {
+    if (handle.Vao == 0) return;
+
+    glBindVertexArray(handle.Vao);
+    glDrawElementsInstanced(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr, handle.InstanceCount);
+}
+
+void Mesh::DestroyInstancedVAO(InstancedVAOHandle& handle) {
+    if (handle.InstanceVbo) glDeleteBuffers(1, &handle.InstanceVbo);
+    if (handle.Vao) glDeleteVertexArrays(1, &handle.Vao);
+    handle = {};
 }
 
 void Mesh::Draw() const {
@@ -143,13 +152,6 @@ void Mesh::Draw() const {
 
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
-}
-
-void Mesh::DrawInstanced() const {
-    if (m_vao == 0 || m_instanceVbo == 0) return;
-
-    glBindVertexArray(m_vao);
-    glDrawElementsInstanced(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr, m_instanceCount);
 }
 
 glm::vec4 Mesh::GetNearestCachedColor(const glm::vec3& localPosition) const {
