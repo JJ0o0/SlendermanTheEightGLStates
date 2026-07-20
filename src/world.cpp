@@ -12,13 +12,23 @@ Entity& World::CreateEntity(const std::string& name, Entity* parent) {
 }
 
 bool World::CheckCollision(const AABB& collider) const {
-    for (const auto& entity : m_entities) {
-        if (entity->IsInstanced()) continue;
-        if (!entity->HasCollider()) continue;
-        if (collider.Intersects(entity->GetColliderAABB())) return true;
-    }
+    bool found = false;
 
-    return false;
+    forEachOverlappedCell(collider, [&](int cx, int cz) {
+        if (found) return;
+
+        auto it = m_collisionGrid.find(cellKey(cx, cz));
+        if (it == m_collisionGrid.end()) return;
+
+        for (Entity* entity : it->second) {
+            if (collider.Intersects(entity->GetColliderAABB())) {
+                found = true;
+                return;
+            }
+        }
+    });
+
+    return found;
 }
 
 std::optional<RaycastHit> World::Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, bool testWorldBounds, const Entity* ignore) const {
@@ -59,4 +69,37 @@ std::optional<AABB> World::GetWorldBounds(const Entity& entity) const {
     }
 
     return result;
+}
+
+void World::BuildCollisionGrid(float cellSize) {
+    m_collisionCellSize = cellSize;
+    m_collisionGrid.clear();
+
+    for (auto& entity : m_entities) {
+        if (entity->IsInstanced()) continue;
+        if (!entity->HasCollider()) continue;
+
+        AABB box = entity->GetColliderAABB();
+
+        forEachOverlappedCell(box, [&](int cx, int cz) {
+            m_collisionGrid[cellKey(cx, cz)].push_back(entity.get());
+        });
+    }
+}
+
+int64_t World::cellKey(int cx, int cz) {
+    return (int64_t(cx) << 32) | uint32_t(cz);
+}
+
+void World::forEachOverlappedCell(const AABB& box, const std::function<void(int, int)>& fn) const {
+    int minCx = (int)std::floor(box.Minimum.x / m_collisionCellSize);
+    int maxCx = (int)std::floor(box.Maximum.x / m_collisionCellSize);
+    int minCz = (int)std::floor(box.Minimum.z / m_collisionCellSize);
+    int maxCz = (int)std::floor(box.Maximum.z / m_collisionCellSize);
+
+    for (int cx = minCx; cx <= maxCx; cx++) {
+        for (int cz = minCz; cz <= maxCz; cz++) {
+            fn(cx, cz);
+        }
+    }
 }

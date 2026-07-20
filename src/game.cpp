@@ -242,4 +242,6 @@ void Game::loadResources() {
     loadShaders();
     loadRenderers();
     loadEntities();
+
+    m_world.BuildCollisionGrid();
 }
